@@ -7,7 +7,7 @@ import json
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
 
-# Título y botón de actualización manual alineados (Línea 11 corregida)
+# Título y botón de actualización manual alineados (Sintaxis corregida para v2026)
 col_titulo, col_boton = st.columns(2)
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
@@ -18,24 +18,24 @@ with col_boton:
         st.cache_data.clear()
         st.rerun()
 
-# 🔑 EXTRACCIÓN SEGURA DE TU API KEY DE GOOGLE DESDE LOS SECRETOS DE STREAMLIT
+# Extracción de tu API Key guardada en Streamlit.io
 try:
     GOOGLE_MAPS_API_KEY = st.secrets["GOOGLE_MAPS_API_KEY"]
 except Exception:
     st.error("🚨 Error: No se encontró la clave 'GOOGLE_MAPS_API_KEY' en los Secrets de Streamlit.")
     GOOGLE_MAPS_API_KEY = ""
 
-# TU ENLACE REAL DE GOOGLE SHEETS
-URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
+# TU ENLACE REAL DE GOOGLE SHEETS FIXED
+URL_DE_TU_SHEET = "https://google.com"
 
 @st.cache_data(ttl=2)
 def cargar_datos():
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     response = requests.get(URL_DE_TU_SHEET, headers=headers, timeout=15)
     response.raise_for_status()
     df = pd.read_csv(io.StringIO(response.text))
     
-    # Limpieza estricta de coordenadas
+    # Limpieza estricta de coordenadas convirtiendo comas en puntos decimales
     df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     
@@ -80,48 +80,45 @@ try:
 
     st.markdown("---")
 
-    # 3. CONSTRUCCIÓN DEL MAPA PREMIUM DE GOOGLE MAPS JAVASCRIPT API
+    # 3. COMPONENTE MAPA PREMIUM CON BASE DE DATOS INYECTADA EN LÍNEA
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
-        # Convertimos los puntos de tu tabla a formato JSON para pasárselos al mapa
+        # Empaquetamos la lista de coordenadas directamente desde el servidor Python
         puntos_lista = []
         for _, fila in df_f.iterrows():
             puntos_lista.append({
                 "lat": float(fila['LAT_INIOC']),
                 "lng": float(fila['LON_INIOC']),
-                "info": f"Usuario: {fila['ENC_USER']}<br>Segmento: {fila['SEG']}<br>Sujeto: {fila['SbjNum']}"
+                "info": f"<b>Usuario:</b> {fila['ENC_USER']}<br><b>Segmento:</b> {fila['SEG']}<br><b>Sujeto:</b> {fila['SbjNum']}"
             })
         json_puntos = json.dumps(puntos_lista)
 
-        # CÓDIGO HTML/JAVASCRIPT NATIVO DE GOOGLE MAPS
+        # Mapa HTML embebido puro compatible con las restricciones del navegador de Streamlit Cloud
         html_mapa = f"""
         <!DOCTYPE html>
         <html>
         <head>
+            <meta charset="utf-8">
             <style>
                 #map {{ height: 100%; width: 100%; position: absolute; top: 0; left: 0; }}
                 html, body {{ height: 100%; margin: 0; padding: 0; }}
             </style>
-            <script src="https://googleapis.com{GOOGLE_MAPS_API_KEY}"></script>
             <script>
                 function initMap() {{
                     var centro = {{ lat: {lat_centro}, lng: {lon_centro} }};
-                    
-                    // Inicializamos el mapa en modo satélite híbrido nativo (HYBRID)
                     var map = new google.maps.Map(document.getElementById('map'), {{
-                        zoom: 17,
+                        zoom: 16,
                         center: centro,
-                        mapTypeId: 'hybrid', // <--- Fuerza las fotos satelitales oficiales de Google
-                        maxZoom: 21,         // Permite el zoom más profundo del mundo sin ponerse en blanco
+                        mapTypeId: google.maps.MapTypeId.HYBRID, // Satélite e Infraestructura HD integrados
+                        maxZoom: 22, // Desbloquea el acercamiento máximo absoluto a nivel de patio/casa
                         tilt: 0
                     }});
 
                     var puntos = {json_puntos};
                     var infowindow = new google.maps.InfoWindow();
 
-                    // Dibujar cada marcador interactivo
                     puntos.forEach(function(punto) {{
                         var marker = new google.maps.Marker({{
                             position: {{ lat: punto.lat, lng: punto.lng }},
@@ -131,20 +128,19 @@ try:
                                 fillColor: '#00FFFF',
                                 fillOpacity: 0.9,
                                 strokeColor: '#FFFFFF',
-                                strokeWeight: 2,
-                                scale: 8
+                                strokeWeight: 1.5,
+                                scale: 7
                             }}
                         }});
 
-                        // Ventana de información al hacer clic en el punto
                         marker.addListener('click', function() {{
                             infowindow.setContent(punto.info);
                             infowindow.open(map, marker);
                         }});
                     }});
                 }}
-                window.onload = initMap;
             </script>
+            <script src="https://googleapis.com{GOOGLE_MAPS_API_KEY}&callback=initMap" async defer></script>
         </head>
         <body>
             <div id="map"></div>
@@ -152,17 +148,17 @@ try:
         </html>
         """
         
-        # Desplegar el mapa premium de forma directa
-        st.components.v1.html(html_mapa, height=650)
+        # Renderizado del mapa en el bloque web
+        st.components.v1.html(html_mapa, height=650, scrolling=False)
 
-        # Tabla inferior de registros
+        # Tabla de registros inferior
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
         if GOOGLE_MAPS_API_KEY == "":
             st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY en los secretos de Streamlit.")
         else:
-            st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
+            st.warning("⚠️ No se encontraron coordenadas válidas para los filtros aplicados.")
 
 except Exception as e:
     st.error(f"🚨 Error crítico en el procesamiento: {e}")
