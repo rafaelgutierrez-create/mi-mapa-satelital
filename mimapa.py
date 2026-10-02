@@ -6,7 +6,7 @@ import urllib.request
 import io
 
 # 1. Configurar la página en modo ancho
-st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real2")
+st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real_2")
 
 # Título y botón de actualización manual alineados (Proporción explícita para evitar errores)
 col_titulo, col_boton = st.columns([4, 1])
