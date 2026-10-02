@@ -6,12 +6,12 @@ import urllib.request
 import io
 
 # 1. Configurar la página en modo ancho
-st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
+st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real3")
 
 # CORRECCIÓN DE COLUMNAS: Definimos las proporciones fijas para evitar el error de inicialización
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Rastreo Satelital Multi-Filtro2")
+    st.title("🛰️ Rastreo Satelital Multi-Filtro3")
 with col_boton:
     st.write("") 
     st.write("") 
@@ -82,34 +82,18 @@ try:
     st.markdown("---")
 
     # 3. GENERACIÓN DEL MAPA CON CAPA HÍBRIDA DE ZOOM ULTRA-PROFUNDO
-    if not df_f.empty:
-        lat_centro = df_f['LAT_INIOC'].mean()
-        lon_centro = df_f['LON_INIOC'].mean()
-
-        fig = px.scatter_map(
-            df_f, 
-            lat="LAT_INIOC", 
-            lon="LON_INIOC",
-            hover_name="ENC_USER", 
-            hover_data={"SbjNum": True, "FECHAOC": True, "SEG": True},
-            zoom=15,  
-            height=650
-        )
-        
-        # CONFIGURACIÓN MAESTRA CON INFRAESTRUCTURA DE GOOGLE MAPS
         fig.update_layout(
             map={
-                "style": "white-bg", # Fondo en blanco para que no interfiera
+                "style": "white-bg", # Mantiene el fondo limpio
                 "layers": [
                     {
-                        "below": "traces", # Dibuja el mapa por debajo de tus datos
+                        "below": "traces", # Asegura que tus datos queden POR ENCIMA del mapa
                         "sourcetype": "raster",
-                        "source": [
-                            # Servidor de Google Maps Satélite (soporta zooms profundos)
-                            "https://google.com{x}&y={y}&z={z}" 
-                            # Si quieres híbrido (satélite + calles) usa esta en su lugar:
-                            # "https://google.com{x}&y={y}&z={z}"
-                        ]
+                        # En versiones modernas se pasa la URL directo como un string dentro de un diccionario "source"
+                        "source": "https://google.com{x}&y={y}&z={z}" 
+                        
+                        # SI QUIERES SATÉLITE + CALLES (HÍBRIDO), USA ESTA URL EN SU LUGAR:
+                        # "source": "https://google.com{x}&y={y}&z={z}"
                     }
                 ]
             }
