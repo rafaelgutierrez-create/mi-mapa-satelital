@@ -8,7 +8,7 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
-# CORRECCIÓN DE COLUMNAS DEFINITIVA: Asignamos proporciones explícitas para evitar el fallo
+# CORRECCIÓN DE COLUMNAS: Definimos las proporciones fijas [4, 1] para evitar fallos
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición")
@@ -84,23 +84,23 @@ try:
         view_state = pdk.ViewState(
             latitude=lat_centro,
             longitude=lon_centro,
-            zoom=13, # Nivel de zoom ideal para ver los puntos distribuidos en la Ciudad de Guatemala
+            zoom=14, # Ajustado a 14 para ver el plano completo de tus datos en la Ciudad de Guatemala
             pitch=0
         )
 
-        # Configuración del color celeste en formato numérico RGBA válido para PyDeck (Cyan brillante)
+        # SOLUCIÓN CRÍTICA: Se inyecta la lista de enteros pura [R, G, B, A] sin comas de texto
         capa_puntos = pdk.Layer(
             "ScatterplotLayer",
             df_f,
             get_position="[LON_INIOC, LAT_INIOC]",
-            get_color="[0, 255, 255, 200]",  # RGBA: Celeste brillante con opacidad
-            get_radius=40,                   # Ajustamos el radio a 40 metros para que se vea claro en el mapa de la ciudad
+            get_color=[0, 255, 255, 200],  # Celeste brillante (Cyan) con opacidad nativa
+            get_radius=35,                 # Tamaño óptimo en metros para el trazado de calles
             pickable=True,
         )
 
-        # Renderizado final con estilo satelital de alta definición nativo mediante Mapbox
+        # Renderizado final usando el token de Mapbox que configuraste en tu config.toml
         st.pydeck_chart(pdk.Deck(
-            map_style="mapbox://styles/mapbox/satellite-streets-v11", # Satélite con nombres de calles en HD
+            map_style="mapbox://styles/mapbox/satellite-streets-v12", # Última versión oficial HD estable
             initial_view_state=view_state,
             layers=[capa_puntos],
             tooltip={"text": "Usuario: {ENC_USER}\nSegmento: {SEG}\nFecha: {FECHAOC}\nSujeto: {SbjNum}"}
