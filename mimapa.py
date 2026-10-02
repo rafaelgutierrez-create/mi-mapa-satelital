@@ -6,12 +6,12 @@ import urllib.request
 import io
 
 # 1. Configurar la página en modo ancho
-st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real3")
+st.set_page_config(layout="wide", page_title="Monitoreo Satelital Realx")
 
-# CORRECCIÓN DE COLUMNAS: Definimos las proporciones fijas para evitar el error de inicialización
+# CORRECCIÓN DE COLUMNAS SEGURO: Definimos la proporción explícita
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Rastreo Satelital Multi-Filtro4")
+    st.title("🛰️ Rastreo Satelital Multi-Filtrox")
 with col_boton:
     st.write("") 
     st.write("") 
@@ -81,7 +81,7 @@ try:
 
     st.markdown("---")
 
-   # 3. GENERACIÓN DEL MAPA CON CAPA HÍBRIDA DE ZOOM ULTRA-PROFUNDO
+    # 3. GENERACIÓN DEL MAPA CON CAPA HÍBRIDA GOOGLE (MÁXIMO ZOOM PARA CENTROAMÉRICA)
     if not df_f.empty:
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
@@ -92,30 +92,26 @@ try:
             lon="LON_INIOC",
             hover_name="ENC_USER", 
             hover_data={"SbjNum": True, "FECHAOC": True, "SEG": True},
-            zoom=15,  
+            zoom=16,  # Zoom inicial muy cercano para ver las estructuras al cargar
             height=650
         )
         
-        # CONFIGURACIÓN MAESTRA CON INFRAESTRUCTURA DE GOOGLE MAPS
+        # CONFIGURACIÓN CON EL SERVIDOR DE GOOGLE HYBRID SATELLITE
         fig.update_layout(
-            mapbox={
-                "style": "white-bg",
-                "layers": [
-                    {
-                        "sourcetype": "raster",
-                        "source": ["https://google.com{x}&y={y}&z={z}"],
-                        "below": "traces",
-                    }
-                ],
-            }
+            map={
+                "style": "open-street-map", 
+                "center": {"lat": lat_centro, "lon": lon_centro},
+                "layers": [{
+                    "sourcetype": "raster",
+                    # CLAVE DE LA SOLUCIÓN: Cambiamos 'lyrs=s' por 'lyrs=y' (Google Satélite Híbrido con definición de casas)
+                    "source": ["https://google.com{x}&y={y}&z={z}"],
+                    "below": "traces"
+                }]
+            },
+            margin={"r":0,"t":0,"l":0,"b":0}
         )
-
-
-
-
-
         
-        # Estilo de puntos celestes de alta visibilidad
+        # Puntos celestes de alto contraste para el fondo oscuro satelital
         fig.update_traces(marker=dict(size=14, color="cyan", opacity=0.9))
         
         st.plotly_chart(fig, width='stretch')
