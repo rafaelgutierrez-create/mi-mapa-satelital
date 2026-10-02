@@ -8,8 +8,8 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
-# Título y botón de actualización
-col_titulo, col_boton = st.columns()
+# CORRECCIÓN DE COLUMNAS: Definimos las proporciones fijas para evitar el error de inicialización
+col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
     st.title("🛰️ Rastreo Satelital Multi-Filtro")
 with col_boton:
@@ -32,7 +32,7 @@ def cargar_datos():
         
     df = pd.read_csv(io.BytesIO(html))
     
-    # Limpieza estricta de coordenadas
+    # Limpieza estricta de coordenadas convirtiendo comas en puntos
     df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     
@@ -96,17 +96,14 @@ try:
             height=650
         )
         
-        # CONFIGURACIÓN MAESTRA DE CAPAS PARA EVITAR EL FONDO BLANCO
+        # CONFIGURACIÓN MAESTRA CON INFRAESTRUCTURA DE GOOGLE MAPS
         fig.update_layout(
             map={
-                # Usamos open-street-map de fondo base en lugar de white-bg.
-                # Si el satélite se llega a quedar sin fotos a nivel de casa, 
-                # verás las calles perfectamente trazadas en vez de una pantalla en blanco.
-                "style": "open-street-map", 
+                "style": "open-street-map", # Si falla la imagen por zoom extremo, muestra el trazado urbano base
                 "center": {"lat": lat_centro, "lon": lon_centro},
                 "layers": [{
                     "sourcetype": "raster",
-                    # Usamos el servidor de Google Maps Satélite (Máxima resolución en Centroamérica)
+                    # Servidor oficial de satélite de Google Maps con alta resolución
                     "source": ["https://google.com{x}&y={y}&z={z}"],
                     "below": "traces"
                 }]
