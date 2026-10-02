@@ -1,0 +1,5 @@
+[theme]
+base = "light"
+
+[mapbox]
+token = "pk.eyJ1Ijoic3RyZWFtbGl0IiwiYSI6ImNsc3RndW14djBoeXcyanA0N3ZvaDkwb2gifQ.F_m_4b54784V4A0K88_4lw"
