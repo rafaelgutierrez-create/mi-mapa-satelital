@@ -4,7 +4,7 @@ import folium
 import pandas as pd
 
 # 1. Coloca tu token aquí (Debe empezar con pk.xxx)
-MAPBOX_TOKEN = "TU_TOKEN_DE_MAPBOX_AQUI"
+MAPBOX_TOKEN = "pk.eyJ1IjoicmFuZ2VsZ2MiLCJhIjoiY211cjg2MWVjMGptajJ6cHoxNXpneGcycyJ9.qj2hk63Sxn9nbKlIsocP3w"
 
 # 2. Coordenadas de ejemplo de Guatemala
 data = pd.DataFrame({
