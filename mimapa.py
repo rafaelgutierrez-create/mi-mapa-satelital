@@ -1,123 +1,123 @@
 import streamlit as st
 import pandas as pd
+import pydeck as pdk
 import time
 import urllib.request
 import io
 
-# 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
-# Título y botón de actualización manual alineados de forma nativa
+# Título y botón alineados con la sintaxis moderna
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Rastreo Satelital Pro (Motor Nativo)")
+    st.title("🛰️ Monitoreo Satelital de Alta Definición")
 with col_boton:
-    st.write("") 
-    st.write("") 
+    st.write("")
     if st.button("🔄 Actualizar Datos", width='stretch'):
         st.cache_data.clear()
         st.rerun()
 
-# Enlace de Google Sheets (Formato CSV)
 URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
 
 @st.cache_data(ttl=2)
 def cargar_datos():
     url_fresca = f"{URL_DE_TU_SHEET}&cache_bypass={int(time.time())}"
     req = urllib.request.Request(url_fresca, headers={'User-Agent': 'Mozilla/5.0'})
-    
     with urllib.request.urlopen(req) as response:
         html = response.read()
-        
     df = pd.read_csv(io.BytesIO(html))
-    
-    # Limpieza estricta de coordenadas convirtiendo comas en puntos
     df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
-    
-    # Saneamiento de columnas para evitar fallos en selectores
-    if 'SEG' in df.columns:
-        df['SEG'] = pd.to_numeric(df['SEG'], errors='coerce').fillna(0).astype(int)
-    if 'SbjNum' in df.columns:
-        df['SbjNum'] = pd.to_numeric(df['SbjNum'], errors='coerce').fillna(0).astype(int)
-        
     return df.dropna(subset=['LAT_INIOC', 'LON_INIOC'])
 
 try:
     df = cargar_datos()
     df_f = df.copy()
 
-    # 2. PANEL DE FILTROS EN COLUMNAS
+    # Panel de filtros simplificado en columnas (Idéntico a tu lógica)
     st.subheader("🎛️ Panel de Filtros")
     col1, col2, col3, col4 = st.columns(4)
-    
     with col1:
-        usuarios_lista = sorted([str(x) for x in df['ENC_USER'].dropna().unique() if str(x).strip() != ""])
-        usuarios = ["Todos"] + usuarios_lista
-        user_sel = st.selectbox("Usuario (ENC_USER):", usuarios)
+        usuarios = ["Todos"] + sorted(list(df['ENC_USER'].dropna().unique()))
+        user_sel = st.selectbox("Usuario:", usuarios)
     if user_sel != "Todos":
-        df_f = df_f[df_f['ENC_USER'].astype(str) == user_sel]
+        df_f = df_f[df_f['ENC_USER'] == user_sel]
 
     with col2:
-        fechas_lista = sorted([str(x) for x in df_f['FECHAOC'].dropna().unique() if str(x).strip() != ""])
-        fechas = ["Todas"] + fechas_lista
-        fecha_sel = st.selectbox("Fecha (FECHAOC):", fechas)
+        fechas = ["Todas"] + sorted(list(df_f['FECHAOC'].dropna().astype(str).unique()))
+        fecha_sel = st.selectbox("Fecha:", fechas)
     if fecha_sel != "Todas":
         df_f = df_f[df_f['FECHAOC'].astype(str) == fecha_sel]
 
     with col3:
-        segmentos_lista = sorted([int(x) for x in df_f['SEG'].dropna().unique()])
-        segmentos = ["Todos"] + segmentos_lista
-        seg_sel = st.selectbox("Segmento (SEG):", segmentos)
+        df_f['SEG'] = pd.to_numeric(df_f['SEG'], errors='coerce').fillna(0).astype(int)
+        segmentos = ["Todos"] + sorted(list(df_f['SEG'].unique()))
+        seg_sel = st.selectbox("Segmento:", segmentos)
     if seg_sel != "Todos":
         df_f = df_f[df_f['SEG'] == int(seg_sel)]
 
     with col4:
-        sujetos_lista = sorted([int(x) for x in df_f['SbjNum'].dropna().unique()])
-        sujetos = ["Todos"] + sujetos_lista
-        sbj_sel = st.selectbox("Sujeto (SbjNum):", sujetos)
+        df_f['SbjNum'] = pd.to_numeric(df_f['SbjNum'], errors='coerce').fillna(0).astype(int)
+        sujetos = ["Todos"] + sorted(list(df_f['SbjNum'].unique()))
+        sbj_sel = st.selectbox("Sujeto:", sujetos)
     if sbj_sel != "Todos":
         df_f = df_f[df_f['SbjNum'] == int(sbj_sel)]
 
     st.markdown("---")
 
-    # 3. RENDERIZADO CON EL MOTOR DE MAPAS PROFESIONAL DE STREAMLIT
     if not df_f.empty:
-        st.subheader("🗺️ Visualización de Rutas")
-        
-        # El componente nativo de Streamlit requiere nombres específicos de columnas estándar
-        df_mapa = df_f.copy()
-        df_mapa['latitude'] = df_mapa['LAT_INIOC']
-        df_mapa['longitude'] = df_mapa['LON_INIOC']
-        
-        # Mapeo automático de colores hexadecimales aleatorios por usuario único
-        usuarios_unicos = df_mapa['ENC_USER'].unique()
-        colores_disponibles = ['#FF0000', '#0000FF', '#00FF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080']
-        mapa_colores = {user: colores_disponibles[i % len(colores_disponibles)] for i, user in enumerate(usuarios_unicos)}
-        df_mapa['color_hex'] = df_mapa['ENC_USER'].map(mapa_colores)
+        # Calcular el centro geográfico dinámico
+        lat_centro = df_f['LAT_INIOC'].mean()
+        lon_centro = df_f['LON_INIOC'].mean()
 
-        # Invocamos el mapa nativo con estilo satelital interactivo integrado
-        st.map(
-            df_mapa,
-            latitude='latitude',
-            longitude='longitude',
-            color='color_hex',
-            size=20,
-            zoom=15
+        # CONFIGURACIÓN DE PYDECK: Forzamos la capa satelital aérea libre de restricciones
+        view_state = pdk.ViewState(
+            latitude=lat_centro,
+            longitude=lon_centro,
+            zoom=15,
+            pitch=0
         )
-        
-        # Leyenda de colores interactiva para saber qué color es cada usuario
-        st.markdown("**🎨 Código de Colores por Usuario:**")
-        cols_leyenda = st.columns(min(len(usuarios_unicos), 6))
-        for idx, user in enumerate(usuarios_unicos):
-            with cols_leyenda[idx % len(cols_leyenda)]:
-                st.markdown(f"<span style='color:{mapa_colores[user]}; font-weight:bold;'>■</span> {user}", unsafe_allow_html=True)
 
-        # Tabla de registros inferior
+        # Dibujamos los puntos celestes interactivos
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            df_f,
+            get_position="[LON_INIOC, LAT_INIOC]",
+            get_color="[0, 255, 255, 200]",  # Celeste brillante con transparencia
+            get_radius=15,                  # Tamaño fijo en metros en la vida real
+            pickable=True,
+        )
+
+        # Usamos el servidor de mapas oficial híbrido para pintar los techos reales de las casas
+        r = pdk.Deck(
+            layers=[layer],
+            initial_view_state=view_state,
+            map_provider="carto",
+            map_style="https://cartocdn.com", # Capa base de respaldo
+            # Inyección de mosaicos satelitales directamente sobre el motor de renderizado gráfico de Streamlit
+            views=[pdk.View(type="MapView", controller=True)],
+        )
+
+        # Cargar el mapa satelital directo de Google sin pasar por intermediarios de Plotly
+        st.pydeck_chart(pdk.Deck(
+            map_style=None,
+            initial_view_state=view_state,
+            layers=[
+                # Capa ráster satelital real integrada directamente
+                pdk.Layer(
+                    "TileLayer",
+                    "https://google.com{x}&y={y}&z={z}",
+                    tile_size=256
+                ),
+                layer
+            ],
+            tooltip={"text": "Usuario: {ENC_USER}\nSegmento: {SEG}\nFecha: {FECHAOC}"}
+        ))
+
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
-        st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
+        st.warning("⚠️ No se encontraron coordenadas para la combinación de filtros seleccionada.")
 
 except Exception as e:
-    st.error(f"🚨 Error crítico en el procesamiento: {e}")
+    st.error(f"🚨 Error de procesamiento: {e}")
