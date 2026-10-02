@@ -97,23 +97,23 @@ try:
         )
         
         # CONFIGURACIÓN MAESTRA CON INFRAESTRUCTURA DE GOOGLE MAPS
-fig.update_layout(
-    map={
-        "style": "white-bg", # Fondo en blanco para que no interfiera
-        "layers": [
-            {
-                "below": "traces", # Dibuja el mapa por debajo de tus datos
-                "sourcetype": "raster",
-                "source": [
-                    # Servidor de Google Maps Satélite (soporta zooms profundos)
-                    "https://google.com{x}&y={y}&z={z}" 
-                    # Si quieres híbrido (satélite + calles) usa esta en su lugar:
-                    # "https://google.com{x}&y={y}&z={z}"
+        fig.update_layout(
+            map={
+                "style": "white-bg", # Fondo en blanco para que no interfiera
+                "layers": [
+                    {
+                        "below": "traces", # Dibuja el mapa por debajo de tus datos
+                        "sourcetype": "raster",
+                        "source": [
+                            # Servidor de Google Maps Satélite (soporta zooms profundos)
+                            "https://google.com{x}&y={y}&z={z}" 
+                            # Si quieres híbrido (satélite + calles) usa esta en su lugar:
+                            # "https://google.com{x}&y={y}&z={z}"
+                        ]
+                    }
                 ]
             }
-        ]
-    }
-)
+        )
 
         
         # Estilo de puntos celestes de alta visibilidad
