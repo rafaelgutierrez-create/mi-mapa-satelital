@@ -82,22 +82,22 @@ try:
     st.markdown("---")
 
     # 3. GENERACIÓN DEL MAPA CON CAPA HÍBRIDA DE ZOOM ULTRA-PROFUNDO
-        fig.update_layout(
-            map={
-                "style": "white-bg", # Mantiene el fondo limpio
-                "layers": [
-                    {
-                        "below": "traces", # Asegura que tus datos queden POR ENCIMA del mapa
-                        "sourcetype": "raster",
-                        # En versiones modernas se pasa la URL directo como un string dentro de un diccionario "source"
-                        "source": "https://google.com{x}&y={y}&z={z}" 
-                        
-                        # SI QUIERES SATÉLITE + CALLES (HÍBRIDO), USA ESTA URL EN SU LUGAR:
-                        # "source": "https://google.com{x}&y={y}&z={z}"
-                    }
-                ]
-            }
-        )
+    fig.update_layout(
+        map={
+            "style": "white-bg", # Mantiene el fondo limpio
+            "layers": [
+                {
+                    "below": "traces", # Asegura que tus datos queden POR ENCIMA del mapa
+                    "sourcetype": "raster",
+                    # En versiones modernas se pasa la URL directo como un string dentro de un diccionario "source"
+                    "source": "https://google.com{x}&y={y}&z={z}" 
+                    
+                    # SI QUIERES SATÉLITE + CALLES (HÍBRIDO), USA ESTA URL EN SU LUGAR:
+                    # "source": "https://google.com{x}&y={y}&z={z}"
+                }
+            ]
+        }
+    )
 
         
         # Estilo de puntos celestes de alta visibilidad
