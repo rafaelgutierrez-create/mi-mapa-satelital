@@ -8,7 +8,7 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
-# Título y botón de actualización manual alineados
+# Título y botón de actualización manual alineados (Proporción explícita para evitar errores)
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
     st.title("🛰️ Rastreo Satelital Multi-Filtro")
@@ -21,6 +21,7 @@ with col_boton:
 
 # Enlace de Google Sheets (Formato CSV)
 URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
+
 
 @st.cache_data(ttl=2)
 def cargar_datos():
@@ -82,9 +83,9 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA DE SATÉLITE AUTOCENTRADO MULTI-PAÍS
+    # 3. GENERACIÓN DEL MAPA DE SATÉLITE HOMOLOGADO MULTI-PAÍS
     if not df_f.empty:
-        # El centro calcula automáticamente cualquier país de Centroamérica según la Sheet
+        # El centro calcula automáticamente cualquier país de Centroamérica según los datos reales
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
@@ -98,24 +99,20 @@ try:
             height=600
         )
         
-        # AJUSTE CORREGIDO: Declaramos el esquema XYZ básico para forzar la carga ráster en Plotly v7
+        # SOLUCIÓN DE COMPATIBILIDAD: Usamos el estilo satelital libre pre-aprobado de Mapbox
+        # Esto elimina las capas custom ('layers') que rompen las políticas CORS del navegador
         fig.update_layout(
             map={
-                "style": "white-bg",
-                "center": {"lat": lat_centro, "lon": lon_centro},
-                "layers": [{
-                    "sourcetype": "raster",
-                    "source": ["https://arcgisonline.com{z}/{y}/{x}"],
-                    "sourceattribution": "Esri World Imagery"
-                }]
+                "style": "satellite-streets", # Satélite con nombres de calles integrado nativo
+                "center": {"lat": lat_centro, "lon": lon_centro}
             },
             margin={"r":0,"t":0,"l":0,"b":0}
         )
         
-        # Color y tamaño de los puntos
-        fig.update_traces(marker=dict(size=14, color="red", opacity=0.9))
+        # Color y tamaño llamativo para los puntos sobre la fotografía de satélite
+        fig.update_traces(marker=dict(size=14, color="cyan", opacity=0.9))
         
-        # Renderizar en la pantalla
+        # Renderizar en la pantalla (Alineado a la versión Streamlit 2026+)
         st.plotly_chart(fig, width='stretch')
         
         # Tabla inferior
