@@ -8,13 +8,13 @@ import io
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
 # Título y botón de actualización manual alineados de forma nativa
-col_titulo, col_boton = st.columns([4, 1])
+col_titulo, col_boton = st.columns()
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición")
 with col_boton:
     st.write("")
     st.write("")
-    if st.button("🔄 Actualizar Datos", use_container_width=True):
+    if st.button("🔄 Actualizar Datos", width='stretch'):
         st.cache_data.clear()
         st.rerun()
 
@@ -74,13 +74,13 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA CON MOTOR DE ALTA RESOLUCIÓN
+    # 3. GENERACIÓN DEL MAPA CON LA FUNCIÓN MODERNA CORRECTA (px.scatter_map)
     if not df_f.empty:
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
-        # px.scatter_mapbox es el motor que lee correctamente tu archivo config.toml
-        fig = px.scatter_mapbox(
+        # SOLUCIÓN: Usamos scatter_map que es el atributo nativo real actual
+        fig = px.scatter_map(
             df_f, 
             lat="LAT_INIOC", 
             lon="LON_INIOC",
@@ -90,21 +90,24 @@ try:
             height=650
         )
         
-        # Forzamos el satélite de alta resolución comercial de Mapbox
+        # Leemos tu token desde config.toml de manera automática usando la sintaxis moderna 'map'
         fig.update_layout(
-            mapbox_style="satellite-streets", 
-            mapbox_center={"lat": lat_centro, "lon": lon_centro},
+            map={
+                "style": "satellite-streets", # Activa el satélite comercial con nombres de calles en HD
+                "center": {"lat": lat_centro, "lon": lon_centro}
+            },
             margin={"r":0,"t":0,"l":0,"b":0}
         )
         
         # Marcadores celestes de alta visibilidad
         fig.update_traces(marker=dict(size=14, color="cyan", opacity=0.9))
         
-        st.plotly_chart(fig, use_container_width=True)
+        # Renderizado moderno adaptado a tu versión de Streamlit
+        st.plotly_chart(fig, width='stretch')
         
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
-        st.dataframe(df_f, use_container_width=True)
+        st.dataframe(df_f, width='stretch')
     else:
         st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
 
