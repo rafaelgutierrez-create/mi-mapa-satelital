@@ -99,20 +99,24 @@ try:
         # CONFIGURACIÓN MAESTRA CON INFRAESTRUCTURA DE GOOGLE MAPS
         fig.update_layout(
             map={
-                "style": "white-bg", # Mantiene el fondo limpio
+                "style": "white-bg",  # Fondo limpio para cargar la capa encima
                 "layers": [
                     {
-                        "below": "traces", # Asegura que tus datos queden POR ENCIMA del mapa
                         "sourcetype": "raster",
-                        # En versiones modernas se pasa la URL directo como un string dentro de un diccionario "source"
-                        "source": "https://google.com{x}&y={y}&z={z}" 
-                        
-                        # SI QUIERES SATÉLITE + CALLES (HÍBRIDO), USA ESTA URL EN SU LUGAR:
-                        # "source": "https://google.com{x}&y={y}&z={z}"
+                        "type": "raster",  # <--- CRITICO: Indica que la capa se renderiza como imagen ráster
+                        "below": "traces",  # Mantiene tus datos (puntos/líneas) por encima del mapa
+                        "source": [
+                            # Satélite puro:
+                            "https://google.com{x}&y={y}&z={z}"
+                            
+                            # SI PREFIERES CALLES + SATÉLITE (HÍBRIDO), USA ESTA URL EN SU LUGAR:
+                            # "https://google.com{x}&y={y}&z={z}"
+                        ],
                     }
-                ]
+                ],
             }
         )
+
 
 
         
