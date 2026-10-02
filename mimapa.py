@@ -7,10 +7,10 @@ import json
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
 
-# Título y botón de actualización manual alineados (Sintaxis corregida para v2026)
+# Título y botón de actualización manual alineados (Línea 11 con las 2 columnas fijas)
 col_titulo, col_boton = st.columns(2)
 with col_titulo:
-    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)2")
+    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
 with col_boton:
     st.write("")
     st.write("")
@@ -18,16 +18,16 @@ with col_boton:
         st.cache_data.clear()
         st.rerun()
 
-# Extracción de tu API Key guardada en Streamlit.io
+# Extracción segura eliminando cualquier espacio oculto que traiga el token
 try:
-    GOOGLE_MAPS_API_KEY = st.secrets["GOOGLE_MAPS_API_KEY"]
+    # Captura el token, lo convierte a texto y le borra espacios fantasmas con .strip()
+    GOOGLE_MAPS_API_KEY = str(st.secrets["GOOGLE_MAPS_API_KEY"]).strip().replace('"', '').replace("'", "")
 except Exception:
     st.error("🚨 Error: No se encontró la clave 'GOOGLE_MAPS_API_KEY' en los Secrets de Streamlit.")
     GOOGLE_MAPS_API_KEY = ""
 
 # TU ENLACE REAL DE GOOGLE SHEETS FIXED
 URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
-
 
 @st.cache_data(ttl=2)
 def cargar_datos():
@@ -36,7 +36,7 @@ def cargar_datos():
     response.raise_for_status()
     df = pd.read_csv(io.StringIO(response.text))
     
-    # Limpieza estricta de coordenadas convirtiendo comas en puntos decimales
+    # Limpieza de coordenadas convirtiendo comas en puntos decimales
     df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     
@@ -81,12 +81,11 @@ try:
 
     st.markdown("---")
 
-    # 3. COMPONENTE MAPA PREMIUM CON BASE DE DATOS INYECTADA EN LÍNEA
+    # 3. COMPONENTE MAPA PREMIUM CON BASE DE DATOS INYECTADA
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
-        # Empaquetamos la lista de coordenadas directamente desde el servidor Python
         puntos_lista = []
         for _, fila in df_f.iterrows():
             puntos_lista.append({
@@ -96,7 +95,9 @@ try:
             })
         json_puntos = json.dumps(puntos_lista)
 
-        # Mapa HTML embebido puro compatible con las restricciones del navegador de Streamlit Cloud
+        # SE REESTRUCTURA LA URL DE CARGA PARA EVITAR CONCATENACIONES ERRÓNEAS EN SCRIPT
+        url_google_api = f"https://googleapis.com{GOOGLE_MAPS_API_KEY}&callback=initMap"
+
         html_mapa = f"""
         <!DOCTYPE html>
         <html>
@@ -112,8 +113,8 @@ try:
                     var map = new google.maps.Map(document.getElementById('map'), {{
                         zoom: 16,
                         center: centro,
-                        mapTypeId: google.maps.MapTypeId.HYBRID, // Satélite e Infraestructura HD integrados
-                        maxZoom: 22, // Desbloquea el acercamiento máximo absoluto a nivel de patio/casa
+                        mapTypeId: google.maps.MapTypeId.HYBRID, // Satélite comercial HD oficial
+                        maxZoom: 22,
                         tilt: 0
                     }});
 
@@ -141,7 +142,7 @@ try:
                     }});
                 }}
             </script>
-            <script src="https://googleapis.com{GOOGLE_MAPS_API_KEY}&callback=initMap" async defer></script>
+            <script src="{url_google_api}" async defer></script>
         </head>
         <body>
             <div id="map"></div>
@@ -149,17 +150,16 @@ try:
         </html>
         """
         
-        # Renderizado del mapa en el bloque web
         st.components.v1.html(html_mapa, height=650, scrolling=False)
 
-        # Tabla de registros inferior
+        # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
         if GOOGLE_MAPS_API_KEY == "":
             st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY en los secretos de Streamlit.")
         else:
-            st.warning("⚠️ No se encontraron coordenadas válidas para los filtros aplicados.")
+            st.warning("⚠️ No se encontraron coordenadas válida para la combinación de filtros seleccionada.")
 
 except Exception as e:
-    st.error(f"🚨 Error crítico en el procesamiento: {e}")
+    st.error(f"🚨 Error de procesamiento: {e}")
