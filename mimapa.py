@@ -11,7 +11,7 @@ st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 # CORRECCIÓN DE COLUMNAS: Definimos las proporciones fijas [4, 1] para evitar fallos
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Monitoreo Satelital de Alta Definición")
+    st.title("🛰️ Monitoreo Satelital de Alta Definición1")
 with col_boton:
     st.write("")
     if st.button("🔄 Actualizar Datos", width='stretch'):
