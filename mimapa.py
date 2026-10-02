@@ -6,12 +6,12 @@ import urllib.request
 import io
 
 # 1. Configurar la página en modo ancho
-st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real_2")
+st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
 # Título y botón de actualización manual alineados (Proporción explícita para evitar errores)
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Rastreo Satelital Multi-Filtro")
+    st.title("Encuestas Coordenadas")
 with col_boton:
     st.write("") 
     st.write("") 
@@ -116,7 +116,7 @@ try:
         st.plotly_chart(fig, width='stretch')
         
         # Tabla inferior
-        st.subheader("📊 Registros en Pantalla")
+        st.subheader("Detalle Registros")
         st.dataframe(df_f, width='stretch')
     else:
         st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
