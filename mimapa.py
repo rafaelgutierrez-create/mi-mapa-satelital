@@ -1,29 +1,21 @@
 import streamlit as st
-import pydeck as pdk
-import pandas as pd
+from streamlit_folium import st_folium
+import folium
 
-# Datos de prueba
-chart_data = pd.DataFrame({
-   'lat': [40.4167, 40.4190, 40.4120],
-   'lon': [-3.7037, -3.7050, -3.7010]
-})
+# Crear el mapa base centrado
+m = folium.Map(location=[40.4167, -3.7037], zoom_start=13)
 
-# Configurar el mapa satelital nativo en Pydeck
-st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/satellite-v9', # Estilo satélite nativo autorizado
-    initial_view_state=pdk.ViewState(
-        latitude=40.4167,
-        longitude=-3.7037,
-        zoom=13,
-        pitch=0,
-    ),
-    layers=[
-        pdk.Layer(
-            'ScatterplotLayer',
-            data=chart_data,
-            get_position='[lon, lat]',
-            get_color='[200, 30, 0, 160]',
-            get_radius=100,
-        ),
-    ],
-))
+# Añadir la capa de satélite de ESRI (Esta no es bloqueada por la CSP de Streamlit)
+folium.TileLayer(
+    tiles='https://arcgisonline.com{z}/{y}/{x}',
+    attr='Esri',
+    name='Esri Satellite',
+    overlay=False,
+    control=True
+).add_to(m)
+
+# Añadir tus puntos de ejemplo
+folium.Marker([40.4167, -3.7037], popup="Punto A").add_to(m)
+
+# Renderizar en Streamlit
+st_folium(m, width=700, height=500)
