@@ -3,7 +3,7 @@ from streamlit_folium import st_folium
 import folium
 
 # Crear el mapa base centrado
-m = folium.Map(location=[40.4167, -3.7037], zoom_start=13)
+m = folium.Map(location=[14.62833, -90.49968833], zoom_start=13)
 
 # Añadir la capa de satélite de ESRI (Esta no es bloqueada por la CSP de Streamlit)
 folium.TileLayer(
