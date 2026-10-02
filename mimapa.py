@@ -97,19 +97,24 @@ try:
         )
         
         # CONFIGURACIÓN MAESTRA CON INFRAESTRUCTURA DE GOOGLE MAPS
-        fig.update_layout(
-            map={
-                "style": "open-street-map", # Si falla la imagen por zoom extremo, muestra el trazado urbano base
-                "center": {"lat": lat_centro, "lon": lon_centro},
-                "layers": [{
-                    "sourcetype": "raster",
-                    # Servidor oficial de satélite de Google Maps con alta resolución
-                    "source": ["https://google.com{x}&y={y}&z={z}"],
-                    "below": "traces"
-                }]
-            },
-            margin={"r":0,"t":0,"l":0,"b":0}
-        )
+fig.update_layout(
+    map={
+        "style": "white-bg", # Fondo en blanco para que no interfiera
+        "layers": [
+            {
+                "below": "traces", # Dibuja el mapa por debajo de tus datos
+                "sourcetype": "raster",
+                "source": [
+                    # Servidor de Google Maps Satélite (soporta zooms profundos)
+                    "https://google.com{x}&y={y}&z={z}" 
+                    # Si quieres híbrido (satélite + calles) usa esta en su lugar:
+                    # "https://google.com{x}&y={y}&z={z}"
+                ]
+            }
+        ]
+    }
+)
+
         
         # Estilo de puntos celestes de alta visibilidad
         fig.update_traces(marker=dict(size=14, color="cyan", opacity=0.9))
