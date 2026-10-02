@@ -17,7 +17,7 @@ with col_boton:
         st.cache_data.clear()
         st.rerun()
 
-# Extracción y limpieza forzada del token de tus secretos de Streamlit
+# Extracción y limpieza matemática total del token
 try:
     raw_key = st.secrets["GOOGLE_MAPS_API_KEY"]
     GOOGLE_MAPS_API_KEY = str(raw_key).replace('\n', '').replace('\r', '').strip().replace('"', '').replace("'", "")
@@ -80,19 +80,21 @@ try:
 
     st.markdown("---")
 
-    # 3. CONSTRUCCIÓN DEL MAPA DE INCUSTACIÓN REGLAMENTARIO DE GOOGLE MAPS EMBED API
+    # 3. CONSTRUCCIÓN CON ENLACE PROTEGIDO (ANTI-CONCATENACIÓN DEFECTUOSA)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
-        # Tomamos la primera coordenada válida del filtro actual para anclar la chincheta de Google
+        # Tomamos la primera coordenada actual para la chincheta
         coordenada_ancla = df_f.iloc[0]
-        lat_ancla = coordenada_ancla['LAT_INIOC']
-        lon_ancla = coordenada_ancla['LON_INIOC']
+        lat_ancla = str(coordenada_ancla['LAT_INIOC'])
+        lon_ancla = str(coordenada_ancla['LON_INIOC'])
 
-        # SINTAXIS OFICIAL EMBED API: Usamos el modo /place con mapa híbrido/satélite forzado (maptype=satellite)
-        url_embed_google = f"https://google.com{GOOGLE_MAPS_API_KEY}&q={lat_ancla},{lon_ancla}&zoom=17&maptype=satellite"
+        # CONSTRUCCIÓN TOTALMENTE SEPARADA: Evita el error de IP no resuelta google.comAIzaSy
+        url_base = "https://google.com"
+        parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&q=" + lat_ancla + "," + lon_ancla + "&zoom=18&maptype=satellite"
+        url_embed_final = url_base + parametros
 
-        # Inyección mediante iframe limpio compatible con el servidor cloud
+        # Dibujar iframe comercial de Google Maps
         st.markdown(
-            f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_google}"></iframe>', 
+            f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
             unsafe_allow_html=True
         )
 
@@ -101,7 +103,7 @@ try:
         st.dataframe(df_f, width='stretch')
     else:
         if GOOGLE_MAPS_API_KEY == "":
-            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY en una sola línea dentro de los secretos.")
+            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
         else:
             st.warning("⚠️ No se encontraron coordenadas válidas para los filtros aplicados.")
 
