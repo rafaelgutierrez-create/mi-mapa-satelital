@@ -1,17 +1,16 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import time
 import urllib.request
 import io
 
 # 1. Configurar la página en modo ancho
-st.set_page_config(layout="wide", page_title="Monitoreo Satelital Realx")
+st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
-# CORRECCIÓN DE COLUMNAS SEGURO: Definimos la proporción explícita
+# Título y botón de actualización manual alineados de forma nativa
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Rastreo Satelital Multi-Filtrox")
+    st.title("🛰️ Rastreo Satelital Pro (Motor Nativo)")
 with col_boton:
     st.write("") 
     st.write("") 
@@ -36,6 +35,7 @@ def cargar_datos():
     df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     
+    # Saneamiento de columnas para evitar fallos en selectores
     if 'SEG' in df.columns:
         df['SEG'] = pd.to_numeric(df['SEG'], errors='coerce').fillna(0).astype(int)
     if 'SbjNum' in df.columns:
@@ -81,41 +81,39 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA CON CAPA HÍBRIDA GOOGLE (MÁXIMO ZOOM PARA CENTROAMÉRICA)
+    # 3. RENDERIZADO CON EL MOTOR DE MAPAS PROFESIONAL DE STREAMLIT
     if not df_f.empty:
-        lat_centro = df_f['LAT_INIOC'].mean()
-        lon_centro = df_f['LON_INIOC'].mean()
+        st.subheader("🗺️ Visualización de Rutas")
+        
+        # El componente nativo de Streamlit requiere nombres específicos de columnas estándar
+        df_mapa = df_f.copy()
+        df_mapa['latitude'] = df_mapa['LAT_INIOC']
+        df_mapa['longitude'] = df_mapa['LON_INIOC']
+        
+        # Mapeo automático de colores hexadecimales aleatorios por usuario único
+        usuarios_unicos = df_mapa['ENC_USER'].unique()
+        colores_disponibles = ['#FF0000', '#0000FF', '#00FF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080']
+        mapa_colores = {user: colores_disponibles[i % len(colores_disponibles)] for i, user in enumerate(usuarios_unicos)}
+        df_mapa['color_hex'] = df_mapa['ENC_USER'].map(mapa_colores)
 
-        fig = px.scatter_map(
-            df_f, 
-            lat="LAT_INIOC", 
-            lon="LON_INIOC",
-            hover_name="ENC_USER", 
-            hover_data={"SbjNum": True, "FECHAOC": True, "SEG": True},
-            zoom=16,  # Zoom inicial muy cercano para ver las estructuras al cargar
-            height=650
+        # Invocamos el mapa nativo con estilo satelital interactivo integrado
+        st.map(
+            df_mapa,
+            latitude='latitude',
+            longitude='longitude',
+            color='color_hex',
+            size=20,
+            zoom=15
         )
         
-        # CONFIGURACIÓN CON EL SERVIDOR DE GOOGLE HYBRID SATELLITE
-        fig.update_layout(
-            map={
-                "style": "open-street-map", 
-                "center": {"lat": lat_centro, "lon": lon_centro},
-                "layers": [{
-                    "sourcetype": "raster",
-                    # CLAVE DE LA SOLUCIÓN: Cambiamos 'lyrs=s' por 'lyrs=y' (Google Satélite Híbrido con definición de casas)
-                    "source": ["https://google.com{x}&y={y}&z={z}"],
-                    "below": "traces"
-                }]
-            },
-            margin={"r":0,"t":0,"l":0,"b":0}
-        )
-        
-        # Puntos celestes de alto contraste para el fondo oscuro satelital
-        fig.update_traces(marker=dict(size=14, color="cyan", opacity=0.9))
-        
-        st.plotly_chart(fig, width='stretch')
-        
+        # Leyenda de colores interactiva para saber qué color es cada usuario
+        st.markdown("**🎨 Código de Colores por Usuario:**")
+        cols_leyenda = st.columns(min(len(usuarios_unicos), 6))
+        for idx, user in enumerate(usuarios_unicos):
+            with cols_leyenda[idx % len(cols_leyenda)]:
+                st.markdown(f"<span style='color:{mapa_colores[user]}; font-weight:bold;'>■</span> {user}", unsafe_allow_html=True)
+
+        # Tabla de registros inferior
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
