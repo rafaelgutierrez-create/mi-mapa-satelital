@@ -8,8 +8,8 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
-# Título y botón alineados para Streamlit v2026+
-col_titulo, col_boton = st.columns([4, 1])
+# Título y botón actualizados a la sintaxis de Streamlit moderna
+col_titulo, col_boton = st.columns()
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición")
 with col_boton:
@@ -67,11 +67,10 @@ try:
     st.markdown("---")
 
     if not df_f.empty:
-        # Calcular el centro geográfico automático para enfocar Guatemala o cualquier país
+        # Calcular el centro dinámico automático para Centroamérica
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
-        # Configuración de la cámara del visor
         view_state = pdk.ViewState(
             latitude=lat_centro,
             longitude=lon_centro,
@@ -79,28 +78,21 @@ try:
             pitch=0
         )
 
-        # Capa de los puntos celestes interactivos (Formato corregido)
+        # Capa de los puntos celestes interactivos
         capa_puntos = pdk.Layer(
             "ScatterplotLayer",
             df_f,
             get_position="[LON_INIOC, LAT_INIOC]",
-            get_color="[0, 255, 255, 200]",  # RGBA: Celeste brillante con opacidad
-            get_radius=12,                  # Radio de los puntos fijado en metros reales
+            get_color=[0, 255, 255, 200],  # Celeste brillante con opacidad en PyDeck
+            get_radius=12,                 # Radio real en metros para que no tape casas al alejar
             pickable=True,
         )
 
-        # Capa satelital híbrida de Google (Muestra casas, calles y vegetación en HD)
-        capa_satelite = pdk.Layer(
-            "TileLayer",
-            "https://google.com{x}&y={y}&z={z}",
-            tile_size=256
-        )
-
-        # Renderizado del mapa unificado en Streamlit
+        # Renderizado final con estilo satelital nativo de alta definición
         st.pydeck_chart(pdk.Deck(
-            map_style=None, # Desactivamos el mapa base para que no interfiera con el satélite
+            map_style="mapbox://styles/mapbox/satellite-streets-v11", # Satélite comercial HD con nombres de calles
             initial_view_state=view_state,
-            layers=[capa_satelite, capa_puntos],
+            layers=[capa_puntos],
             tooltip={"text": "Usuario: {ENC_USER}\nSegmento: {SEG}\nFecha: {FECHAOC}"}
         ))
 
