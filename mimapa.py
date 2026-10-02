@@ -7,8 +7,8 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
-# Título y botón de actualización manual alineados de forma nativa
-col_titulo, col_boton = st.columns()
+# CORRECCIÓN DEFINITIVA DE LÍNEA 11: Se añade el número 2 para inicializar las columnas
+col_titulo, col_boton = st.columns(2)
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición")
 with col_boton:
@@ -79,7 +79,6 @@ try:
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
-        # SOLUCIÓN: Usamos scatter_map que es el atributo nativo real actual
         fig = px.scatter_map(
             df_f, 
             lat="LAT_INIOC", 
@@ -109,7 +108,7 @@ try:
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
-        st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
+        st.warning("⚠️ No se encontraron coordenadas válida para la combinación de filtros seleccionada.")
 
 except Exception as e:
     st.error(f"🚨 Error crítico en el procesamiento: {e}")
