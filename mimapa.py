@@ -2,12 +2,11 @@ import streamlit as st
 import pandas as pd
 import requests
 import io
-import json
 
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
 
-# Título y botón de actualización manual alineados (Línea 11 con las 2 columnas fijas)
+# Ajuste estricto de columnas superiores (Línea 11 fija con 2 columnas)
 col_titulo, col_boton = st.columns(2)
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
@@ -18,15 +17,15 @@ with col_boton:
         st.cache_data.clear()
         st.rerun()
 
-# Extracción segura eliminando cualquier espacio oculto que traiga el token
+# Extracción y limpieza forzada del token de tus secretos de Streamlit
 try:
-    # Captura el token, lo convierte a texto y le borra espacios fantasmas con .strip()
-    GOOGLE_MAPS_API_KEY = str(st.secrets["GOOGLE_MAPS_API_KEY"]).strip().replace('"', '').replace("'", "")
+    raw_key = st.secrets["GOOGLE_MAPS_API_KEY"]
+    GOOGLE_MAPS_API_KEY = str(raw_key).replace('\n', '').replace('\r', '').strip().replace('"', '').replace("'", "")
 except Exception:
     st.error("🚨 Error: No se encontró la clave 'GOOGLE_MAPS_API_KEY' en los Secrets de Streamlit.")
     GOOGLE_MAPS_API_KEY = ""
 
-# TU ENLACE REAL DE GOOGLE SHEETS FIXED
+# TU ENLACE REAL DE GOOGLE SHEETS
 URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
 
 @st.cache_data(ttl=2)
@@ -81,85 +80,30 @@ try:
 
     st.markdown("---")
 
-    # 3. COMPONENTE MAPA PREMIUM CON BASE DE DATOS INYECTADA
+    # 3. CONSTRUCCIÓN DEL MAPA DE INCUSTACIÓN REGLAMENTARIO DE GOOGLE MAPS EMBED API
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
-        lat_centro = df_f['LAT_INIOC'].mean()
-        lon_centro = df_f['LON_INIOC'].mean()
+        # Tomamos la primera coordenada válida del filtro actual para anclar la chincheta de Google
+        coordenada_ancla = df_f.iloc[0]
+        lat_ancla = coordenada_ancla['LAT_INIOC']
+        lon_ancla = coordenada_ancla['LON_INIOC']
 
-        puntos_lista = []
-        for _, fila in df_f.iterrows():
-            puntos_lista.append({
-                "lat": float(fila['LAT_INIOC']),
-                "lng": float(fila['LON_INIOC']),
-                "info": f"<b>Usuario:</b> {fila['ENC_USER']}<br><b>Segmento:</b> {fila['SEG']}<br><b>Sujeto:</b> {fila['SbjNum']}"
-            })
-        json_puntos = json.dumps(puntos_lista)
+        # SINTAXIS OFICIAL EMBED API: Usamos el modo /place con mapa híbrido/satélite forzado (maptype=satellite)
+        url_embed_google = f"https://google.com{GOOGLE_MAPS_API_KEY}&q={lat_ancla},{lon_ancla}&zoom=17&maptype=satellite"
 
-        # SE REESTRUCTURA LA URL DE CARGA PARA EVITAR CONCATENACIONES ERRÓNEAS EN SCRIPT
-        url_google_api = f"https://googleapis.com{GOOGLE_MAPS_API_KEY}&callback=initMap"
-
-        html_mapa = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                #map {{ height: 100%; width: 100%; position: absolute; top: 0; left: 0; }}
-                html, body {{ height: 100%; margin: 0; padding: 0; }}
-            </style>
-            <script>
-                function initMap() {{
-                    var centro = {{ lat: {lat_centro}, lng: {lon_centro} }};
-                    var map = new google.maps.Map(document.getElementById('map'), {{
-                        zoom: 16,
-                        center: centro,
-                        mapTypeId: google.maps.MapTypeId.HYBRID, // Satélite comercial HD oficial
-                        maxZoom: 22,
-                        tilt: 0
-                    }});
-
-                    var puntos = {json_puntos};
-                    var infowindow = new google.maps.InfoWindow();
-
-                    puntos.forEach(function(punto) {{
-                        var marker = new google.maps.Marker({{
-                            position: {{ lat: punto.lat, lng: punto.lng }},
-                            map: map,
-                            icon: {{
-                                path: google.maps.SymbolPath.CIRCLE,
-                                fillColor: '#00FFFF',
-                                fillOpacity: 0.9,
-                                strokeColor: '#FFFFFF',
-                                strokeWeight: 1.5,
-                                scale: 7
-                            }}
-                        }});
-
-                        marker.addListener('click', function() {{
-                            infowindow.setContent(punto.info);
-                            infowindow.open(map, marker);
-                        }});
-                    }});
-                }}
-            </script>
-            <script src="{url_google_api}" async defer></script>
-        </head>
-        <body>
-            <div id="map"></div>
-        </body>
-        </html>
-        """
-        
-        st.components.v1.html(html_mapa, height=650, scrolling=False)
+        # Inyección mediante iframe limpio compatible con el servidor cloud
+        st.markdown(
+            f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_google}"></iframe>', 
+            unsafe_allow_html=True
+        )
 
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
         if GOOGLE_MAPS_API_KEY == "":
-            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY en los secretos de Streamlit.")
+            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY en una sola línea dentro de los secretos.")
         else:
-            st.warning("⚠️ No se encontraron coordenadas válida para la combinación de filtros seleccionada.")
+            st.warning("⚠️ No se encontraron coordenadas válidas para los filtros aplicados.")
 
 except Exception as e:
-    st.error(f"🚨 Error de procesamiento: {e}")
+    st.error(f"🚨 Error crítico en el procesamiento: {e}")
