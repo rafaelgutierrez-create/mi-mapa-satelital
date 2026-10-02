@@ -98,19 +98,18 @@ try:
         
         # CONFIGURACIÓN MAESTRA CON INFRAESTRUCTURA DE GOOGLE MAPS
         fig.update_layout(
-            map={
-                "style": "white-bg",  # Canvas base
-                "center": {"lat": 40.4167, "lon": -3.7037},  # <--- CAMBIA ESTO por el centro de tus datos (Ej: Madrid)
-                "zoom": 12,  # <--- Zoom inicial (ajústalo según tu escala)
+            mapbox={
+                "style": "white-bg",
                 "layers": [
                     {
                         "sourcetype": "raster",
-                        "source": ["https://google.com{x}&y={y}&z={z}"],  # URL en lista []
+                        "source": ["https://google.com{x}&y={y}&z={z}"],
                         "below": "traces",
                     }
                 ],
             }
         )
+
 
 
 
