@@ -8,10 +8,10 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real")
 
-# Título y botón de actualización manual alineados (Proporción explícita para evitar errores)
-col_titulo, col_boton = st.columns([4, 1])
+# Título y botón de actualización
+col_titulo, col_boton = st.columns()
 with col_titulo:
-    st.title("Encuestas Coordenadas")
+    st.title("🛰️ Rastreo Satelital Multi-Filtro")
 with col_boton:
     st.write("") 
     st.write("") 
@@ -21,7 +21,6 @@ with col_boton:
 
 # Enlace de Google Sheets (Formato CSV)
 URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
-
 
 @st.cache_data(ttl=2)
 def cargar_datos():
@@ -33,11 +32,10 @@ def cargar_datos():
         
     df = pd.read_csv(io.BytesIO(html))
     
-    # Limpieza estricta de coordenadas convirtiendo comas en puntos
+    # Limpieza estricta de coordenadas
     df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     
-    # Homogeneizar columnas para evitar caídas en sorted() por tipos mixtos
     if 'SEG' in df.columns:
         df['SEG'] = pd.to_numeric(df['SEG'], errors='coerce').fillna(0).astype(int)
     if 'SbjNum' in df.columns:
@@ -83,9 +81,8 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA DE SATÉLITE HOMOLOGADO MULTI-PAÍS
+    # 3. GENERACIÓN DEL MAPA CON CAPA HÍBRIDA DE ZOOM ULTRA-PROFUNDO
     if not df_f.empty:
-        # El centro calcula automáticamente cualquier país de Centroamérica según los datos reales
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
@@ -95,28 +92,34 @@ try:
             lon="LON_INIOC",
             hover_name="ENC_USER", 
             hover_data={"SbjNum": True, "FECHAOC": True, "SEG": True},
-            zoom=12,  
-            height=600
+            zoom=15,  
+            height=650
         )
         
-        # SOLUCIÓN DE COMPATIBILIDAD: Usamos el estilo satelital libre pre-aprobado de Mapbox
-        # Esto elimina las capas custom ('layers') que rompen las políticas CORS del navegador
+        # CONFIGURACIÓN MAESTRA DE CAPAS PARA EVITAR EL FONDO BLANCO
         fig.update_layout(
             map={
-                "style": "satellite", # Satélite con nombres de calles integrado nativo
-                "center": {"lat": lat_centro, "lon": lon_centro}
+                # Usamos open-street-map de fondo base en lugar de white-bg.
+                # Si el satélite se llega a quedar sin fotos a nivel de casa, 
+                # verás las calles perfectamente trazadas en vez de una pantalla en blanco.
+                "style": "open-street-map", 
+                "center": {"lat": lat_centro, "lon": lon_centro},
+                "layers": [{
+                    "sourcetype": "raster",
+                    # Usamos el servidor de Google Maps Satélite (Máxima resolución en Centroamérica)
+                    "source": ["https://google.com{x}&y={y}&z={z}"],
+                    "below": "traces"
+                }]
             },
             margin={"r":0,"t":0,"l":0,"b":0}
         )
         
-        # Color y tamaño llamativo para los puntos sobre la fotografía de satélite
+        # Estilo de puntos celestes de alta visibilidad
         fig.update_traces(marker=dict(size=14, color="cyan", opacity=0.9))
         
-        # Renderizar en la pantalla (Alineado a la versión Streamlit 2026+)
         st.plotly_chart(fig, width='stretch')
         
-        # Tabla inferior
-        st.subheader("Detalle Registros")
+        st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
         st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
