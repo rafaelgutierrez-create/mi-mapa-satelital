@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import time
-import urllib.request
+import requests
 import io
 
 # 1. Configurar la página en modo ancho
@@ -14,39 +13,35 @@ with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición")
 with col_boton:
     st.write("")
+    st.write("")
     if st.button("🔄 Actualizar Datos", width='stretch'):
         st.cache_data.clear()
         st.rerun()
 
-# TU ENLACE REAL DE GOOGLE SHEETS
+# TU ENLACE REAL INTEGRADO FIJO PARA EVITAR OLVIDOS
 URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
 
 @st.cache_data(ttl=2)
 def cargar_datos():
-    url_fresca = f"{URL_DE_TU_SHEET}&cache_bypass={int(time.time())}"
-    # Configuramos reintentos básicos en caso de fallos de red del servidor
-    for intento in range(3):
-        try:
-            req = urllib.request.Request(url_fresca, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=10) as response:
-                html = response.read()
-            df = pd.read_csv(io.BytesIO(html))
-            
-            # Limpieza estricta de coordenadas convirtiendo comas en puntos decimales
-            df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
-            df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
-            
-            # Saneamiento de columnas para evitar fallos en los selectores
-            if 'SEG' in df.columns:
-                df['SEG'] = pd.to_numeric(df['SEG'], errors='coerce').fillna(0).astype(int)
-            if 'SbjNum' in df.columns:
-                df['SbjNum'] = pd.to_numeric(df['SbjNum'], errors='coerce').fillna(0).astype(int)
-                
-            return df.dropna(subset=['LAT_INIOC', 'LON_INIOC'])
-        except Exception:
-            if intento == 2:
-                raise
-            time.sleep(1)
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    
+    # Conexión blindada a tu Google Sheet
+    response = requests.get(URL_DE_TU_SHEET, headers=headers, timeout=15)
+    response.raise_for_status()
+    
+    df = pd.read_csv(io.StringIO(response.text))
+    
+    # Limpieza estricta de coordenadas convirtiendo comas en puntos decimales
+    df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
+    df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
+    
+    # Saneamiento de columnas para evitar fallos en los selectores
+    if 'SEG' in df.columns:
+        df['SEG'] = pd.to_numeric(df['SEG'], errors='coerce').fillna(0).astype(int)
+    if 'SbjNum' in df.columns:
+        df['SbjNum'] = pd.to_numeric(df['SbjNum'], errors='coerce').fillna(0).astype(int)
+        
+    return df.dropna(subset=['LAT_INIOC', 'LON_INIOC'])
 
 try:
     df = cargar_datos()
@@ -82,26 +77,30 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA SATELITAL CON TU NUEVO TOKEN
+    # 3. GENERACIÓN DEL MAPA SATELITAL CON TU PROPIO TOKEN
     if not df_f.empty:
-        # Usamos px.scatter_map (Sintaxis para Plotly moderno)
+        # Calcular el centro dinámico matemático sobre tus coordenadas de Guatemala
+        lat_centro = df_f['LAT_INIOC'].mean()
+        lon_centro = df_f['LON_INIOC'].mean()
+
         fig = px.scatter_map(
             df_f, 
             lat="LAT_INIOC", 
             lon="LON_INIOC",
             hover_name="ENC_USER", 
             hover_data={"SbjNum": True, "FECHAOC": True, "SEG": True},
-            zoom=15,  # Zoom óptimo de aproximación inicial urbana
+            zoom=14,  
             height=650
         )
         
-        # PROYECCIÓN SATELITAL HD DESBLOQUEADA POR TU TOKEN PRIVADO
+        # Activamos las fotos aéreas estables vinculadas a tu cuenta de Mapbox
         fig.update_layout(
-            map_style="satellite-streets", # Activa las fotos aéreas oficiales de Mapbox con nombres de calles
+            map_style="satellite-streets", 
+            map_center={"lat": lat_centro, "lon": lon_centro},
             margin={"r":0,"t":0,"l":0,"b":0}
         )
         
-        # Estilo de marcas celestes de alta visibilidad
+        # Marcadores celestes de alta definición
         fig.update_traces(
             marker=dict(size=14, color="cyan", opacity=0.9)
         )
