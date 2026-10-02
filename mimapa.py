@@ -103,7 +103,7 @@ try:
         # Esto elimina las capas custom ('layers') que rompen las políticas CORS del navegador
         fig.update_layout(
             map={
-                "style": "satellite-streets", # Satélite con nombres de calles integrado nativo
+                "style": "satellite", # Satélite con nombres de calles integrado nativo
                 "center": {"lat": lat_centro, "lon": lon_centro}
             },
             margin={"r":0,"t":0,"l":0,"b":0}
