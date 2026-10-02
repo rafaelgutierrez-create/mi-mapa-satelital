@@ -10,7 +10,7 @@ st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
 # Título y botón de actualización manual alineados (Sintaxis corregida para v2026)
 col_titulo, col_boton = st.columns(2)
 with col_titulo:
-    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
+    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)2")
 with col_boton:
     st.write("")
     st.write("")
