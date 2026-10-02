@@ -1,41 +1,47 @@
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
+import pandas as pd
 
-# 1. Crear el mapa base especificando el zoom inicial de cerca (17 o 18)
+# 1. Definimos tus coordenadas de ejemplo para Centroamérica (Guatemala)
+data = pd.DataFrame({
+    'lat': [14.62833, 14.61833667, 14.65187],
+    'lon': [-90.49968833, -90.50662, -90.47395167]
+})
+
+# Calcular el centro exacto de tus puntos para que el mapa abra justo ahí
+centro_lat = data['lat'].mean()
+centro_lon = data['lon'].mean()
+
+# 2. Inicializar el mapa base vacío centrado en tu zona de interés
 m = folium.Map(
-    location=[40.4167, -3.7037],  # <--- Reemplaza por tus coordenadas reales
-    zoom_start=18,
+    location=[centro_lat, centro_lon], 
+    zoom_start=14, # Zoom inicial ideal para ver el grupo completo de puntos
 )
 
-# 2. Inyectar la capa satelital directa (Formato plano compatible al 100%)
+# 3. Inyectar capa satelital híbrida (FOTOS REALES + CALLES) resolviendo el problema del zoom
 folium.TileLayer(
-    tiles='https://google.com{x}&y={y}&z={z}', # lyrs=y incluye las casas y nombres de calles
+    tiles='https://google.com{x}&y={y}&z={z}', # lyrs=y es el híbrido perfecto de Google
     attr='Google',
-    name='Google Satellite',
-    overlay=True, # Obliga a superponerlo sobre el fondo base para evitar la pantalla transparente
-    max_zoom=20,
+    name='Google Hybrid',
+    overlay=True,             # Obliga a pintar encima de cualquier fondo gris
+    max_zoom=22,              # <--- Zoom máximo permitido al usuario al interactuar
+    max_native_zoom=18,       # <--- TRUCO CRÍTICO: Evita que el mapa se borre en Centroamérica
 ).add_to(m)
 
-# 3. Crear el grupo de tus datos
-grupo_puntos = folium.FeatureGroup(name="Mis Ubicaciones")
+# 4. Agrupar y dibujar los puntos sobre el terreno real de las viviendas
+grupo_puntos = folium.FeatureGroup(name="Mis Coordenadas")
 
-# Tus coordenadas reales (Ejemplo de prueba)
-coordenadas = [
-    [40.4167, -3.7037],
-    [40.4190, -3.7050],
-    [40.4120, -3.7010]
-]
-
-for coord in coordenadas:
+# Recorrer tu DataFrame para pintar cada marcador
+for idx, row in data.iterrows():
     folium.Marker(
-        location=coord, 
-        popup="Información del punto",
-        icon=folium.Icon(color="red", icon="info-sign")
+        location=[row['lat'], row['lon']], 
+        popup=f"Punto #{idx+1} ({row['lat']}, {row['lon']})",
+        icon=folium.Icon(color="red", icon="cloud")
     ).add_to(grupo_puntos)
 
-# 4. Unir todo al mapa base
+# Unir las capas vectoriales encima del satélite
 grupo_puntos.add_to(m)
 
-# Renderizar en tu app de Streamlit Cloud
+# 5. Renderizar de forma responsiva en Streamlit Cloud
 st_folium(m, width=800, height=500, use_container_width=True)
