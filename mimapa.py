@@ -79,16 +79,15 @@ try:
         df_f = df_f[df_f['SbjNum'] == int(sbj_sel)]
 
     st.markdown("---")
-
-    # 3. GENERACIÓN DEL MAPA EMBED OFICIAL REGLAMENTARIO DE GOOGLE MAPS (SIN ERROR 404)
+    # 3. GENERACIÓN DEL MAPA EMBED OFICIAL REGLAMENTARIO DE GOOGLE MAPS (SOLUCIONADO)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
         # Calculamos la media de tus coordenadas para situar la cámara exactamente sobre tus rutas
         lat_centro = str(df_f['LAT_INIOC'].mean())
         lon_centro = str(df_f['LON_INIOC'].mean())
 
-        # URL MAESTRA OFICIAL CORREGIDA: Usamos el endpoint 'place' con el parámetro 'q' que exige Google
-        url_base = "https://googleapis.com"
-        parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&q=" + lat_centro + "," + lon_centro + "&zoom=18&maptype=satellite"
+        # URL MAESTRA OFICIAL CORREGIDA: Endpoint correcto de Google Maps Embed API
+        url_base = "https://google.com"
+        parametros = f"?key={GOOGLE_MAPS_API_KEY}&center={lat_centro},{lon_centro}&zoom=18&maptype=satellite"
         url_embed_final = url_base + parametros
 
         # Dibujar iframe comercial oficial de Google Maps autorizado sin bloqueos
@@ -99,7 +98,8 @@ try:
 
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
-        st.dataframe(df_f, width='stretch')
+        st.dataframe(df_f, use_container_width=True)
+
     else:
         if GOOGLE_MAPS_API_KEY == "":
             st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
