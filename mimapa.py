@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import requests
 import io
 
@@ -9,7 +10,7 @@ st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
 # Ajuste de columnas superiores para el título y botón (Línea 11 fija)
 col_titulo, col_boton = st.columns(2)
 with col_titulo:
-    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
+    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Tiles)")
 with col_boton:
     st.write("")
     st.write("")
@@ -17,17 +18,15 @@ with col_boton:
         st.cache_data.clear()
         st.rerun()
 
-# Extracción y limpieza matemática total del token privado de los secretos
+# Extracción y limpieza de tu token de Mapbox desde tu config.toml anterior
 try:
-    raw_key = st.secrets["GOOGLE_MAPS_API_KEY"]
-    GOOGLE_MAPS_API_KEY = str(raw_key).replace('\n', '').replace('\r', '').strip().replace('"', '').replace("'", "")
+    raw_key = st.secrets["GOOGLE_MAPS_API_KEY"] # Mantenemos el nombre de tu secreto actual
+    MAPBOX_TOKEN = str(raw_key).replace('\n', '').replace('\r', '').strip().replace('"', '').replace("'", "")
 except Exception:
-    st.error("🚨 Error: No se encontró la clave 'GOOGLE_MAPS_API_KEY' en los Secrets de Streamlit.")
-    GOOGLE_MAPS_API_KEY = ""
+    MAPBOX_TOKEN = ""
 
 # TU ENLACE REAL DE GOOGLE SHEETS
-URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
-
+URL_DE_TU_SHEET = "https://google.com"
 
 @st.cache_data(ttl=2)
 def cargar_datos():
@@ -81,32 +80,50 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA CON SINTAXIS BLINDADA DE RED
-    if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
-        lat_txt = str(df_f['LAT_INIOC'].mean())
-        lon_txt = str(df_f['LON_INIOC'].mean())
+    # 3. GENERACIÓN DEL MAPA INYECTANDO LAS TESELAS DE GOOGLE QUE ENCONTRASTE
+    if not df_f.empty:
+        lat_centro = df_f['LAT_INIOC'].mean()
+        lon_centro = df_f['LON_INIOC'].mean()
 
-        # Aislando los caracteres de consulta para evitar corrupciones de texto (google.com14.62)
-        base_url = "https://google.com"
-        query_trigger = "?q="
-        
-        # Ensamblado lineal directo y limpio de la URL de Google Maps Embed
-        url_embed_final = f"{base_url}{query_trigger}{lat_txt},{lon_txt}&z=18&t=k&output=embed&key={GOOGLE_MAPS_API_KEY}"
-
-        # Dibujar el componente iframe de Google Maps nativo
-        st.markdown(
-            f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
-            unsafe_allow_html=True
+        # Usamos px.scatter_map (Sintaxis nativa actual 2026 de Plotly)
+        fig = px.scatter_map(
+            df_f, 
+            lat="LAT_INIOC", 
+            lon="LON_INIOC",
+            hover_name="ENC_USER", 
+            hover_data={"SbjNum": True, "FECHAOC": True, "SEG": True},
+            zoom=16,  # Un zoom de 16 para arrancar viendo los techos de las casas de inmediato
+            height=650
         )
-
+        
+        # AQUÍ ESTÁ EL TRUCO MAGNÍFICO: Inyectamos tu link de Google como la capa ráster base
+        fig.update_layout(
+            map={
+                "style": "white-bg", # Quitamos las calles grises molestas de Mapbox
+                "center": {"lat": lat_centro, "lon": lon_centro},
+                "layers": [{
+                    "sourcetype": "raster",
+                    # Usamos la URL exacta que encontraste en el foro (cambiando http por https para que Streamlit Cloud lo acepte)
+                    "source": ["https://google.com{x}&y={y}&z={z}"],
+                    "below": "traces" # Esto obliga a que los puntos celestes queden POR ENCIMA del satélite
+                }]
+            },
+            margin={"r":0,"t":0,"l":0,"b":0}
+        )
+        
+        # Marcadores celestes (Cyan) de alta visibilidad para que contrasten sobre el satélite oscuro
+        fig.update_traces(
+            marker=dict(size=14, color="cyan", opacity=0.9)
+        )
+        
+        # Renderizado en Streamlit
+        st.plotly_chart(fig, width='stretch')
+        
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
-        if GOOGLE_MAPS_API_KEY == "":
-            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
-        else:
-            st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
+        st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
 
 except Exception as e:
     st.error(f"🚨 Error crítico en el procesamiento: {e}")
