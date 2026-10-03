@@ -98,7 +98,7 @@ try:
 
         # Inyección directa del servidor satelital híbrido de Google (Fotos + Calles)
         folium.TileLayer(
-            tiles="https://mt1.google.com/vt?lyrs=h@159000000,traffic|seconds_into_week:-1&style=3&x={x}&y={y}&z={z}",
+            tiles="https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}",
             attr="Google Maps Satellite Hybrid",
             name="Google Satélite Híbrido",
             max_zoom=20, 
