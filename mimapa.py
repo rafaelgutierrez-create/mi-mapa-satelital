@@ -74,7 +74,7 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA CON GOOGLE SATÉLITE HYBRID (ZOOM ILIMITADO)
+     # 3. GENERACIÓN DEL MAPA CON GOOGLE SATÉLITE HYBRID (ZOOM ILIMITADO)
     if not df_f.empty:
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
@@ -84,15 +84,15 @@ try:
 
         # AGREGAMOS EL SATÉLITE REAL DE GOOGLE CON ZOOM MÁXIMO DE 20
         folium.TileLayer(
-            tiles="http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
+            tiles="http://google.com{x}&y={y}&z={z}",
             attr="Google Maps Satellite",
             name="Google Satélite",
-            max_zoom=20, # <--- ESTO DESBLOQUEA EL ZOOM ULTRA DE ACERCAMIENTO MÁXIMO
+            max_zoom=20,
             overlay=False,
             control=False
         ).add_to(m)
 
-        # Dibujar tus puntos celestes con ventanas flotantes de información
+        # Dibujar tus puntos amarillos con ventanas flotantes de información
         for _, fila in df_f.iterrows():
             texto_popup = f"""
             <b>Usuario:</b> {fila['ENC_USER']}<br>
@@ -102,16 +102,17 @@ try:
             """
             folium.CircleMarker(
                 location=[fila['LAT_INIOC'], fila['LON_INIOC']],
-                radius=5,
+                radius=7,
                 popup=folium.Popup(texto_popup, max_width=250),
-                color="#FFFF00 ",
+                color="#FFFF00",       # CAMBIADO: Borde amarillo intenso
                 fill=True,
-                fill_color="#FFFF00 ",
-                fill_opacity=0.8
+                fill_color="#FFFF00",  # CAMBIADO: Relleno amarillo intenso
+                fill_opacity=0.9       # Subido ligeramente a 0.9 para que brille más
             ).add_to(m)
 
         # Renderizar en Streamlit al ancho de la pantalla
         st_folium(m, width=1400, height=600, returned_objects=[])
+
 
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
