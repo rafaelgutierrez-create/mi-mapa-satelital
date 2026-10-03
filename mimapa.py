@@ -101,7 +101,7 @@ try:
                 "zoom": 16,
                 "layers": [{
                     "sourcetype": "raster",
-                    "source": ["https://google.com{x}&y={y}&z={z}"],
+                    "source": ["http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}"],
                     "below": "traces" # Obliga a los puntos amarillos a quedar arriba del satélite
                 }]
             },
