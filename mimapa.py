@@ -105,7 +105,7 @@ try:
                 "layers": [{
                     "sourcetype": "raster",
                     # Usamos la URL exacta que encontraste en el foro (cambiando http por https para que Streamlit Cloud lo acepte)
-                    "source": ["https://google.com{x}&y={y}&z={z}"],
+                    "source": [http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}"],
                     "below": "traces" # Esto obliga a que los puntos celestes queden POR ENCIMA del satélite
                 }]
             },
