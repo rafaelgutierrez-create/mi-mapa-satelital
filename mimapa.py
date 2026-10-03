@@ -19,7 +19,6 @@ with col_boton:
 
 # Extracción limpia y directa del token privado desde los secretos
 try:
-    # Se extrae directamente sin operaciones de reemplazo que puedan dañar la firma de la clave
     GOOGLE_MAPS_API_KEY = st.secrets["GOOGLE_MAPS_API_KEY"].strip()
 except Exception:
     st.error("🚨 Error: No se encontró la clave 'GOOGLE_MAPS_API_KEY' en los Secrets de Streamlit.")
@@ -80,17 +79,17 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA EMBED OFICIAL REGLAMENTARIO DE GOOGLE MAPS (SOLUCIONADO)
+    # 3. GENERACIÓN DEL MAPA EMBED CONFIGURADO CORRECTAMENTE (SIN ERROR 404)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
-        # Calculamos la media de tus coordenadas para situar la cámara exactamente sobre tus rutas
-        lat_centro = str(df_f['LAT_INIOC'].mean())
-        lon_centro = str(df_f['LON_INIOC'].mean())
+        # Calculamos el promedio geográfico exacto
+        lat_centro = df_f['LAT_INIOC'].mean()
+        lon_centro = df_f['LON_INIOC'].mean()
 
-        # URL MAESTRA OFICIAL CORREGIDA: Endpoint 'v1/place' oficial para mapas incrustados comerciales
+        # Usamos el modo oficial v1/view pasándole los parámetros estructurados por separado
         url_base = "https://google.com"
-        url_embed_final = f"{url_base}?key={GOOGLE_MAPS_API_KEY}&q={lat_centro},{lon_centro}&zoom=17&maptype=satellite"
+        url_embed_final = f"{url_base}?key={GOOGLE_MAPS_API_KEY}&center={lat_centro},{lon_centro}&zoom=17&maptype=satellite"
 
-        # Dibujar iframe comercial oficial de Google Maps autorizado sin bloqueos
+        # Dibujar el mapa mediante un contenedor iframe estándar limpio
         st.markdown(
             f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
             unsafe_allow_html=True
