@@ -26,7 +26,7 @@ except Exception:
     GOOGLE_MAPS_API_KEY = ""
 
 # TU ENLACE REAL DE GOOGLE SHEETS
-URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
+URL_DE_TU_SHEET = "https://google.com"
 
 @st.cache_data(ttl=2)
 def cargar_datos():
@@ -80,14 +80,17 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA BLINDADO CONTRA ERRORES DE ENLACE COMAIZASY
+    # 3. GENERACIÓN DEL MAPA CON SINTAXIS BLINDADA DE RED
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
         lat_txt = str(df_f['LAT_INIOC'].mean())
         lon_txt = str(df_f['LON_INIOC'].mean())
 
-        # PLANTILLA TOTALMENTE CORREGIDA: Se introduce '?q=' explícito y limpio en una sola pieza de texto inalterable
-        plantilla_url = "https://google.com"
-        url_embed_final = plantilla_url % (lat_txt, lon_txt, GOOGLE_MAPS_API_KEY)
+        # Aislando los caracteres de consulta para evitar corrupciones de texto (google.com14.62)
+        base_url = "https://google.com"
+        query_trigger = "?q="
+        
+        # Ensamblado lineal directo y limpio de la URL de Google Maps Embed
+        url_embed_final = f"{base_url}{query_trigger}{lat_txt},{lon_txt}&z=18&t=k&output=embed&key={GOOGLE_MAPS_API_KEY}"
 
         # Dibujar el componente iframe de Google Maps nativo
         st.markdown(
