@@ -84,7 +84,7 @@ try:
 
         # AGREGAMOS EL SATÉLITE REAL DE GOOGLE CON ZOOM MÁXIMO DE 20
         folium.TileLayer(
-            tiles="http://google.com{x}&y={y}&z={z}",
+            tiles="http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
             attr="Google Maps Satellite",
             name="Google Satélite",
             max_zoom=20,
