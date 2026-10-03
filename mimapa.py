@@ -6,7 +6,7 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
 
-# Ajuste estricto de columnas superiores para el título y botón (Línea 11 corregida)
+# Ajuste de columnas superiores para el título y botón (Línea 11 fija)
 col_titulo, col_boton = st.columns(2)
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
@@ -80,14 +80,14 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA CON EL ENDPOINT UNIVERSAL DE GOOGLE MAPS
+    # 3. GENERACIÓN DEL MAPA BLINDADO CONTRA ERRORES DE ENLACE COMAIZASY
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
-        # Calculamos el centro para apuntar la cámara
-        lat_centro = str(df_f['LAT_INIOC'].mean())
-        lon_centro = str(df_f['LON_INIOC'].mean())
+        lat_txt = str(df_f['LAT_INIOC'].mean())
+        lon_txt = str(df_f['LON_INIOC'].mean())
 
-        # URL UNIVERSAL INALTRABLE: Cambiamos maps.googleapis por el endpoint directo de mapas incrustados
-        url_embed_final = f"https://google.com{lat_centro},{lon_centro}&z=18&t=k&output=embed&key={GOOGLE_MAPS_API_KEY}"
+        # PLANTILLA TOTALMENTE CORREGIDA: Se introduce '?q=' explícito y limpio en una sola pieza de texto inalterable
+        plantilla_url = "https://google.com"
+        url_embed_final = plantilla_url % (lat_txt, lon_txt, GOOGLE_MAPS_API_KEY)
 
         # Dibujar el componente iframe de Google Maps nativo
         st.markdown(
