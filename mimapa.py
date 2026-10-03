@@ -8,7 +8,7 @@ import folium
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Ultra HD")
 
-# Título y botón de actualización manual
+# Título y botón de actualización manual alineados de forma nativa
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Maps)")
@@ -19,7 +19,8 @@ with col_boton:
         st.cache_data.clear()
         st.rerun()
 
-URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
+# TU ENLACE REAL DE GOOGLE SHEETS
+URL_DE_TU_SHEET = "https://google.com"
 
 @st.cache_data(ttl=2)
 def cargar_datos():
@@ -71,6 +72,10 @@ try:
     if sbj_sel != "Todos":
         df_f = df_f[df_f['SbjNum'] == int(sbj_sel)]
 
+    # INTERRUPTOR INTERACTIVO PARA MAPEO DE RUTA TRACEADA
+    st.write("")
+    mostrar_lineas = st.checkbox("🗺️ Dibujar líneas de ruta (Conecta los puntos por Encuestador y Fecha en orden cronológico)")
+
     st.markdown("---")
 
     # 3. GENERACIÓN DEL MAPA CON GOOGLE SATÉLITE HÍBRIDO (CALLES Y COMERCIOS ACTIVOS)
@@ -81,7 +86,7 @@ try:
         # Crear mapa base de Folium centrado
         m = folium.Map(location=[lat_centro, lon_centro], zoom_start=16, control_scale=True)
 
-        # CAMBIO CRÍTICO: Usamos 'lyrs=y' para activar las capas de texto, calles y negocios sobre las fotos
+        # Capa Satélite Híbrida de Google (Aérea + Nombres de Calles y Comercios)
         folium.TileLayer(
             tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
             attr="Google Maps Satellite Hybrid",
@@ -91,18 +96,46 @@ try:
             control=False
         ).add_to(m)
 
-        # Dibujar tus puntos amarillos intensos con ventanas flotantes de información
+        # LÓGICA DE DIBUJO DE LÍNEAS (Solo si el usuario activa el checkbox de la pantalla)
+        if mostrar_lineas:
+            # Agrupamos por Encuestador y Fecha para no mezclar trayectorias de personas distintas
+            grupos = df_f.groupby(['ENC_USER', 'FECHAOC'])
+            
+            for (usuario, fecha), grupo in grupos:
+                # Ordenamos cronológicamente usando el SbjNum como secuencia temporal
+                grupo_ordenado = grupo.sort_values(by='SbjNum')
+                
+                # Extraemos las coordenadas en orden para trazar la línea continua
+                coordenadas_ruta = grupo_ordenado[['LAT_INIOC', 'LON_INIOC']].values.tolist()
+                
+                if len(coordenadas_ruta) > 1:
+                    # Inyectamos la línea de trayectoria amarilla intensa en el mapa
+                    folium.PolyLine(
+                        locations=coordenadas_ruta,
+                        color="#FFFF00",
+                        weight=3,
+                        opacity=0.75,
+                        tooltip=f"Ruta: {usuario} ({fecha})"
+                    ).add_to(m)
+
+        # Dibujar tus puntos amarillos intensos con Tooltips automáticos al pasar el mouse
         for _, fila in df_f.iterrows():
+            # Texto grande para el Click
             texto_popup = f"""
             <b>Usuario:</b> {fila['ENC_USER']}<br>
             <b>Fecha:</b> {fila['FECHAOC']}<br>
             <b>Segmento:</b> {fila['SEG']}<br>
             <b>Sujeto:</b> {fila['SbjNum']}
             """
+            
+            # Texto rápido para el Hover (Pasar el cursor encima) usando la variable SbjNum
+            texto_tooltip = f"Sujeto: {fila['SbjNum']}"
+            
             folium.CircleMarker(
                 location=[fila['LAT_INIOC'], fila['LON_INIOC']],
-                radius=7,
+                radius=5,
                 popup=folium.Popup(texto_popup, max_width=250),
+                tooltip=folium.Tooltip(texto_tooltip, permanent=False), # <-- HOVER AUTOMÁTICO REQUERIDO
                 color="#FFFF00",       # Amarillo intenso para el borde
                 fill=True,
                 fill_color="#FFFF00",  # Amarillo intenso para el relleno
@@ -113,7 +146,7 @@ try:
         st_folium(m, width=1400, height=600, returned_objects=[])
 
         # Tabla inferior de registros
-        st.subheader("Pantalla")
+        st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
         st.warning("⚠️ No se encontraron coordenadas válidas para los filtros seleccionados.")
