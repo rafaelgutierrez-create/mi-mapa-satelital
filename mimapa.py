@@ -11,7 +11,7 @@ st.set_page_config(layout="wide", page_title="Monitoreo Satelital Ultra HD")
 # Título y botón de actualización manual
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Maps)")
+    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Maps)Plotly ")
 with col_boton:
     st.write("")
     st.write("")
