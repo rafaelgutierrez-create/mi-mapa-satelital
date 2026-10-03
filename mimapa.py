@@ -80,19 +80,18 @@ try:
 
     st.markdown("---")
 
-    # 3. CONSTRUCCIÓN CON MODO DE BÚSQUEDA AUTORIZADO (SOLUCIÓN FINAL DE LIENZO GRIS)
+    # 3. CONSTRUCCIÓN CON MODO VIEW OFICIAL DE GOOGLE (MÁXIMA NITIDEZ SATELITAL)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
-        # Tomamos la primera coordenada actual para la chincheta
-        coordenada_ancla = df_f.iloc[0]
-        lat_ancla = str(coordenada_ancla['LAT_INIOC'])
-        lon_ancla = str(coordenada_ancla['LON_INIOC'])
+        # Calculamos la media de tus coordenadas para situar la cámara exactamente sobre tus rutas
+        lat_centro = str(df_f['LAT_INIOC'].mean())
+        lon_centro = str(df_f['LON_INIOC'].mean())
 
-        # CORRECCIÓN DE MODO: Cambiamos /place por /search para que Google acepte números de coordenadas puras
+        # SINTAXIS REGLAMENTARIA DE GOOGLE: Modo /view con parámetro center y maptype=satellite
         url_base = "https://googleapis.com"
-        parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&q=" + lat_ancla + "," + lon_ancla + "&zoom=18&maptype=satellite"
+        parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&center=" + lat_centro + "," + lon_centro + "&zoom=17&maptype=satellite"
         url_embed_final = url_base + parametros
 
-        # Dibujar iframe comercial oficial de Google Maps
+        # Dibujar iframe comercial oficial de Google Maps autorizado sin bloqueos
         st.markdown(
             f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
             unsafe_allow_html=True
@@ -101,7 +100,6 @@ try:
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
-
     else:
         if GOOGLE_MAPS_API_KEY == "":
             st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
