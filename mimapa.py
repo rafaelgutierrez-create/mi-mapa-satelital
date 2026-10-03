@@ -157,7 +157,7 @@ try:
             
             folium.CircleMarker(
                 location=[fila['LAT_INIOC'], fila['LON_INIOC']],
-                radius=8,
+                radius=3,
                 popup=folium.Popup(texto_popup, max_width=250),
                 tooltip=folium.Tooltip(texto_tooltip, permanent=False),
                 color=color_punto,
