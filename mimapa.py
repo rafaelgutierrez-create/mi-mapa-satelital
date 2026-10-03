@@ -1,16 +1,17 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import requests
 import io
+from streamlit_folium import st_folium
+import folium
 
 # 1. Configurar la página en modo ancho
-st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
+st.set_page_config(layout="wide", page_title="Monitoreo Satelital Ultra HD")
 
-# Ajuste de columnas superiores para el título y botón (Línea 11 fija)
-col_titulo, col_boton = st.columns(2)
+# Título y botón de actualización manual
+col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Tiles)")
+    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Maps)")
 with col_boton:
     st.write("")
     st.write("")
@@ -18,25 +19,17 @@ with col_boton:
         st.cache_data.clear()
         st.rerun()
 
-# Extracción y limpieza de tu token de Mapbox desde tu config.toml anterior
-try:
-    raw_key = st.secrets["GOOGLE_MAPS_API_KEY"] # Mantenemos el nombre de tu secreto actual
-    MAPBOX_TOKEN = str(raw_key).replace('\n', '').replace('\r', '').strip().replace('"', '').replace("'", "")
-except Exception:
-    MAPBOX_TOKEN = ""
-
 # TU ENLACE REAL DE GOOGLE SHEETS
 URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
 
-
 @st.cache_data(ttl=2)
 def cargar_datos():
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    headers = {'User-Agent': 'Mozilla/5.0'}
     response = requests.get(URL_DE_TU_SHEET, headers=headers, timeout=15)
     response.raise_for_status()
     df = pd.read_csv(io.StringIO(response.text))
     
-    # Limpieza de coordenadas convirtiendo comas en puntos decimales
+    # Limpieza de coordenadas
     df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     
@@ -81,50 +74,50 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA INYECTANDO LAS TESELAS DE GOOGLE QUE ENCONTRASTE
+    # 3. GENERACIÓN DEL MAPA CON GOOGLE SATÉLITE HYBRID (ZOOM ILIMITADO)
     if not df_f.empty:
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
-        # Usamos px.scatter_map (Sintaxis nativa actual 2026 de Plotly)
-        fig = px.scatter_map(
-            df_f, 
-            lat="LAT_INIOC", 
-            lon="LON_INIOC",
-            hover_name="ENC_USER", 
-            hover_data={"SbjNum": True, "FECHAOC": True, "SEG": True},
-            zoom=16,  # Un zoom de 16 para arrancar viendo los techos de las casas de inmediato
-            height=650
-        )
-        
-        # AQUÍ ESTÁ EL TRUCO MAGNÍFICO: Inyectamos tu link de Google como la capa ráster base
-        fig.update_layout(
-            map={
-                "style": "white-bg", # Quitamos las calles grises molestas de Mapbox
-                "center": {"lat": lat_centro, "lon": lon_centro},
-                "layers": [{
-                    "sourcetype": "raster",
-                    # Usamos la URL exacta que encontraste en el foro (cambiando http por https para que Streamlit Cloud lo acepte)
-                    "source": [http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}"],
-                    "below": "traces" # Esto obliga a que los puntos celestes queden POR ENCIMA del satélite
-                }]
-            },
-            margin={"r":0,"t":0,"l":0,"b":0}
-        )
-        
-        # Marcadores celestes (Cyan) de alta visibilidad para que contrasten sobre el satélite oscuro
-        fig.update_traces(
-            marker=dict(size=14, color="cyan", opacity=0.9)
-        )
-        
-        # Renderizado en Streamlit
-        st.plotly_chart(fig, width='stretch')
-        
+        # Crear mapa base de Folium centrado
+        m = folium.Map(location=[lat_centro, lon_centro], zoom_start=16, control_scale=True)
+
+        # AGREGAMOS EL SATÉLITE REAL DE GOOGLE CON ZOOM MÁXIMO DE 20
+        folium.TileLayer(
+            tiles="http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
+            attr="Google Maps Satellite",
+            name="Google Satélite",
+            max_zoom=20, # <--- ESTO DESBLOQUEA EL ZOOM ULTRA DE ACERCAMIENTO MÁXIMO
+            overlay=False,
+            control=False
+        ).add_to(m)
+
+        # Dibujar tus puntos celestes con ventanas flotantes de información
+        for _, fila in df_f.iterrows():
+            texto_popup = f"""
+            <b>Usuario:</b> {fila['ENC_USER']}<br>
+            <b>Fecha:</b> {fila['FECHAOC']}<br>
+            <b>Segmento:</b> {fila['SEG']}<br>
+            <b>Sujeto:</b> {fila['SbjNum']}
+            """
+            folium.CircleMarker(
+                location=[fila['LAT_INIOC'], fila['LON_INIOC']],
+                radius=7,
+                popup=folium.Popup(texto_popup, max_width=250),
+                color="#00FFFF",
+                fill=True,
+                fill_color="#00FFFF",
+                fill_opacity=0.8
+            ).add_to(m)
+
+        # Renderizar en Streamlit al ancho de la pantalla
+        st_folium(m, width=1400, height=600, returned_objects=[])
+
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
-        st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
+        st.warning("⚠️ No se encontraron coordenadas válidas para los filtros seleccionados.")
 
 except Exception as e:
     st.error(f"🚨 Error crítico en el procesamiento: {e}")
