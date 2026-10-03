@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import requests
 import io
-import urllib.parse
 
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
@@ -80,31 +79,17 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA DE GOOGLE CON RUTA COMPLETA INTERACTIVA
+    # 3. GENERACIÓN DEL MAPA EMBED CONFIGURADO EN MODO V1/VIEW (SEGURO Y GARANTIZADO)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
-        lat_centro = df_f['LAT_INIOC'].mean()
-        lon_centro = df_f['LON_INIOC'].mean()
+        # Calculamos el promedio matemático del set de datos actual para centrar la cámara
+        lat_centro = float(df_f['LAT_INIOC'].mean())
+        lon_centro = float(df_f['LON_INIOC'].mean())
 
-        # Construcción avanzada de la ruta: unimos los puntos usando el modo 'directions' de Google
-        # Esto dibujará de forma automática líneas de trayecto uniendo tus registros geográficos
+        # Endpoint reglamentario en modo view (No requiere APIs adicionales de rutas ni de búsqueda de texto)
         url_base = "https://google.com"
-        
-        # El origen será el primer registro y el destino el último de la tabla filtrada
-        origen = f"{df_f['LAT_INIOC'].iloc[0]},{df_f['LON_INIOC'].iloc[0]}"
-        destino = f"{df_f['LAT_INIOC'].iloc[-1]},{df_f['LON_INIOC'].iloc[-1]}"
-        
-        # Los puntos intermedios se agregan como waypoints (Google acepta hasta 23 puntos)
-        puntos_medios = []
-        for _, fila in df_f.iloc[1:-1].head(20).iterrows():
-            puntos_medios.append(f"{fila['LAT_INIOC']},{fila['LON_INIOC']}")
-        
-        waypoints = "|".join(puntos_medios)
-        waypoints_encoded = urllib.parse.quote(waypoints)
+        url_embed_final = f"{url_base}?key={GOOGLE_MAPS_API_KEY}&center={lat_centro},{lon_centro}&zoom=17&maptype=satellite"
 
-        # URL final estructurada para vista de satélite con el recorrido trazado
-        url_embed_final = f"{url_base}?key={GOOGLE_MAPS_API_KEY}&origin={origen}&destination={destino}&waypoints={waypoints_encoded}&mode=walking&zoom=16&maptype=satellite"
-
-        # Renderizar mapa satelital interactivo
+        # Dibujar el mapa mediante el iframe estándar sin bloqueos
         st.markdown(
             f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
             unsafe_allow_html=True
@@ -115,7 +100,7 @@ try:
         st.dataframe(df_f, use_container_width=True)
     else:
         if GOOGLE_MAPS_API_KEY == "":
-            st.warning("⚠️ Esperando la activación de tu API Key y su configuración dentro de los secretos de Streamlit.")
+            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY dentro de los secretos de Streamlit.")
         else:
             st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
 
