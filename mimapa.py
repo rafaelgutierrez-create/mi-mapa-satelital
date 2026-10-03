@@ -11,7 +11,7 @@ st.set_page_config(layout="wide", page_title="Monitoreo Satelital Ultra HD")
 # Título y botón de actualización manual
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Maps)Plotly ")
+    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Maps)")
 with col_boton:
     st.write("")
     st.write("")
@@ -20,7 +20,7 @@ with col_boton:
         st.rerun()
 
 # TU ENLACE REAL DE GOOGLE SHEETS
-URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
+URL_DE_TU_SHEET = "https://google.com"
 
 @st.cache_data(ttl=2)
 def cargar_datos():
@@ -74,45 +74,47 @@ try:
 
     st.markdown("---")
 
-        # 3. GENERACIÓN DEL MAPA CON PLOTLY GRAPH OBJECTS (HOVER AUTOMÁTICO + GOOGLE TILES)
+    # 3. GENERACIÓN DEL MAPA CON GOOGLE SATÉLITE HÍBRIDO (CALLES Y COMERCIOS ACTIVOS)
     if not df_f.empty:
-        import plotly.graph_objects as go
-
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
-        # Construimos el mapa con etiquetas flotantes instantáneas al pasar el cursor
-        fig = go.Figure(go.Scattermap(
-            lat=df_f["LAT_INIOC"],
-            lon=df_f["LON_INIOC"],
-            mode='markers',
-            # Marcadores de color amarillo intenso de alta visibilidad
-            marker=go.scattermap.Marker(size=14, color='#FFFF00', opacity=0.9),
-            # Texto personalizado idéntico al de tu imagen
-            text="Usuario: " + df_f["ENC_USER"].astype(str) + "<br>Sujeto: " + df_f["SbjNum"].astype(str),
-            hoverinfo='text'
-        ))
+        # Crear mapa base de Folium centrado
+        m = folium.Map(location=[lat_centro, lon_centro], zoom_start=16, control_scale=True)
 
-        # Inyectamos tu enlace de Google Satélite de forma nativa para que no se borre al hacer zoom
-        fig.update_layout(
-            map={
-                "style": "white-bg", # Quitamos el mapa vectorial base
-                "center": {"lat": lat_centro, "lon": lon_centro},
-                "zoom": 16,
-                "layers": [{
-                    "sourcetype": "raster",
-                    "source": ["http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}"],
-                    "below": "traces" # Obliga a los puntos amarillos a quedar arriba del satélite
-                }]
-            },
-            margin={"r":0,"t":0,"l":0,"b":0}
-        )
+        # CAMBIO CRÍTICO: Usamos 'lyrs=y' para activar las capas de texto, calles y negocios sobre las fotos
+        folium.TileLayer(
+            tiles="http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
+            attr="Google Maps Satellite Hybrid",
+            name="Google Satélite Híbrido",
+            max_zoom=20, 
+            overlay=False,
+            control=False
+        ).add_to(m)
 
-        # Renderizado moderno adaptado a Streamlit
-        st.plotly_chart(fig, width='stretch')
+        # Dibujar tus puntos amarillos intensos con ventanas flotantes de información
+        for _, fila in df_f.iterrows():
+            texto_popup = f"""
+            <b>Usuario:</b> {fila['ENC_USER']}<br>
+            <b>Fecha:</b> {fila['FECHAOC']}<br>
+            <b>Segmento:</b> {fila['SEG']}<br>
+            <b>Sujeto:</b> {fila['SbjNum']}
+            """
+            folium.CircleMarker(
+                location=[fila['LAT_INIOC'], fila['LON_INIOC']],
+                radius=7,
+                popup=folium.Popup(texto_popup, max_width=250),
+                color="#FFFF00",       # Amarillo intenso para el borde
+                fill=True,
+                fill_color="#FFFF00",  # Amarillo intenso para el relleno
+                fill_opacity=0.9
+            ).add_to(m)
+
+        # Renderizar en Streamlit al ancho de la pantalla
+        st_folium(m, width=1400, height=600, returned_objects=[])
 
         # Tabla inferior de registros
-        st.subheader("📊 Registros en Pantalla")
+        st.subheader("Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
         st.warning("⚠️ No se encontraron coordenadas válidas para los filtros seleccionados.")
