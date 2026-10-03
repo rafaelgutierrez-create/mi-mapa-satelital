@@ -6,21 +6,21 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
 
-# Ajuste estricto de columnas superiores para el título y botón (Línea 11 corregida)
+# Ajuste estricto de columnas superiores
 col_titulo, col_boton = st.columns(2)
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
 with col_boton:
     st.write("")
     st.write("")
-    if st.button("🔄 Actualizar Datos", width='stretch'):
+    if st.button("🔄 Actualizar Datos", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
-# Extracción y limpieza matemática total del token privado de los secretos
+# Extracción limpia y directa del token privado desde los secretos
 try:
-    raw_key = st.secrets["GOOGLE_MAPS_API_KEY"]
-    GOOGLE_MAPS_API_KEY = str(raw_key).replace('\n', '').replace('\r', '').strip().replace('"', '').replace("'", "")
+    # Se extrae directamente sin operaciones de reemplazo que puedan dañar la firma de la clave
+    GOOGLE_MAPS_API_KEY = st.secrets["GOOGLE_MAPS_API_KEY"].strip()
 except Exception:
     st.error("🚨 Error: No se encontró la clave 'GOOGLE_MAPS_API_KEY' en los Secrets de Streamlit.")
     GOOGLE_MAPS_API_KEY = ""
@@ -80,16 +80,17 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA CON EL ENDPOINT UNIVERSAL DE GOOGLE MAPS
+    # 3. GENERACIÓN DEL MAPA EMBED OFICIAL REGLAMENTARIO DE GOOGLE MAPS (SOLUCIONADO)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
-        # Calculamos el centro para apuntar la cámara
+        # Calculamos la media de tus coordenadas para situar la cámara exactamente sobre tus rutas
         lat_centro = str(df_f['LAT_INIOC'].mean())
         lon_centro = str(df_f['LON_INIOC'].mean())
 
-        # URL UNIVERSAL INALTRABLE: Cambiamos maps.googleapis por el endpoint directo de mapas incrustados
-        url_embed_final = f"https://google.com{lat_centro},{lon_centro}&z=18&t=k&output=embed&key={GOOGLE_MAPS_API_KEY}"
+        # URL MAESTRA OFICIAL CORREGIDA: Endpoint 'v1/place' oficial para mapas incrustados comerciales
+        url_base = "https://google.com"
+        url_embed_final = f"{url_base}?key={GOOGLE_MAPS_API_KEY}&q={lat_centro},{lon_centro}&zoom=17&maptype=satellite"
 
-        # Dibujar el componente iframe de Google Maps nativo
+        # Dibujar iframe comercial oficial de Google Maps autorizado sin bloqueos
         st.markdown(
             f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
             unsafe_allow_html=True
@@ -97,10 +98,10 @@ try:
 
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
-        st.dataframe(df_f, width='stretch')
+        st.dataframe(df_f, use_container_width=True)
     else:
         if GOOGLE_MAPS_API_KEY == "":
-            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
+            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY dentro de los secretos de Streamlit.")
         else:
             st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
 
