@@ -85,11 +85,15 @@ try:
         lat_centro = str(df_f['LAT_INIOC'].mean())
         lon_centro = str(df_f['LON_INIOC'].mean())
 
-        # URL MAESTRA OFICIAL CORREGIDA: Endpoint correcto de Google Maps Embed API
+        # URL MAESTRA OFICIAL CORREGIDA: Usando el endpoint reglamentario 'place'
         url_base = "https://google.com"
-        parametros = f"?key={GOOGLE_MAPS_API_KEY}&center={lat_centro},{lon_centro}&zoom=18&maptype=satellite"
+        
+        # El parámetro 'q' es obligatorio para el modo 'place' y recibe las coordenadas
+        parametros = f"?key={GOOGLE_MAPS_API_KEY}&q={lat_centro},{lon_centro}&zoom=17&maptype=satellite"
         url_embed_final = url_base + parametros
 
+
+        
         # Dibujar iframe comercial oficial de Google Maps autorizado sin bloqueos
         st.markdown(
             f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
