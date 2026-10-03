@@ -26,7 +26,7 @@ except Exception:
     GOOGLE_MAPS_API_KEY = ""
 
 # TU ENLACE REAL DE GOOGLE SHEETS
-URL_DE_TU_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXnTLmB6L7QK4Tj33d016VUUD419vBnbgdQYrOHHQzJc_74VDSqDWdh3bQSrSF8oKKHjEZ5bl6PxAK/pub?gid=0&single=true&output=csv"
+URL_DE_TU_SHEET = "https://google.com"
 
 @st.cache_data(ttl=2)
 def cargar_datos():
@@ -79,21 +79,18 @@ try:
         df_f = df_f[df_f['SbjNum'] == int(sbj_sel)]
 
     st.markdown("---")
-    # 3. GENERACIÓN DEL MAPA EMBED OFICIAL REGLAMENTARIO DE GOOGLE MAPS (SOLUCIONADO)
+
+    # 3. GENERACIÓN DEL MAPA EMBED OFICIAL REGLAMENTARIO DE GOOGLE MAPS (SIN ERROR 404)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
         # Calculamos la media de tus coordenadas para situar la cámara exactamente sobre tus rutas
         lat_centro = str(df_f['LAT_INIOC'].mean())
         lon_centro = str(df_f['LON_INIOC'].mean())
 
-        # URL MAESTRA OFICIAL CORREGIDA: Usando el endpoint reglamentario 'place'
-        url_base = "https://google.com"
-        
-        # El parámetro 'q' es obligatorio para el modo 'place' y recibe las coordenadas
-        parametros = f"?key={GOOGLE_MAPS_API_KEY}&q={lat_centro},{lon_centro}&zoom=17&maptype=satellite"
+        # URL MAESTRA OFICIAL CORREGIDA: Usamos el endpoint 'place' con el parámetro 'q' que exige Google
+        url_base = "https://googleapis.com"
+        parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&q=" + lat_centro + "," + lon_centro + "&zoom=18&maptype=satellite"
         url_embed_final = url_base + parametros
 
-
-        
         # Dibujar iframe comercial oficial de Google Maps autorizado sin bloqueos
         st.markdown(
             f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
@@ -102,8 +99,7 @@ try:
 
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
-        st.dataframe(df_f, use_container_width=True)
-
+        st.dataframe(df_f, width='stretch')
     else:
         if GOOGLE_MAPS_API_KEY == "":
             st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
