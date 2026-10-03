@@ -2,20 +2,21 @@ import streamlit as st
 import pandas as pd
 import requests
 import io
+import plotly.express as px
 from streamlit_folium import st_folium
 import folium
 
-# 1. Configurar la página en modo ancho
-st.set_page_config(layout="wide", page_title="Monitoreo Satelital Ultra HD")
+# 1. Configurar la página en modo ancho y tema del Tablero
+st.set_page_config(layout="wide", page_title="Tablero de Control Satelital")
 
-# Título y botón de actualización manual alineados de forma nativa
+# Título de la Plataforma y Botón de actualización alineados
 col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Maps)")
+    st.title("🛰️ Sistema de Auditoría y Monitoreo Satelital Pro")
 with col_boton:
     st.write("")
     st.write("")
-    if st.button("🔄 Actualizar Datos", width='stretch'):
+    if st.button("🔄 Actualizar Servidor", width='stretch'):
         st.cache_data.clear()
         st.rerun()
 
@@ -28,7 +29,7 @@ def cargar_datos():
     response.raise_for_status()
     df = pd.read_csv(io.StringIO(response.text))
     
-    # Limpieza de coordenadas
+    # Limpieza estricta de coordenadas
     df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     
@@ -44,7 +45,7 @@ try:
     df_f = df.copy()
 
     # 2. PANEL DE FILTROS EN COLUMNAS
-    st.subheader("🎛️ Panel de Filtros")
+    st.subheader("🎛️ Panel de Filtros Interactivos")
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -71,21 +72,31 @@ try:
     if sbj_sel != "Todos":
         df_f = df_f[df_f['SbjNum'] == int(sbj_sel)]
 
-    # INTERRUPTOR INTERACTIVO PARA MAPEO DE RUTA TRACEADA
-    st.write("")
-    mostrar_lineas = st.checkbox("🗺️ Dibujar líneas de ruta (Conecta los puntos por Encuestador y Fecha en orden cronológico)")
+    # Interruptor para activar la auditoría visual de caminos
+    mostrar_lineas = st.checkbox("🗺️ Activar Líneas de Ruta y Secuencia de Auditoría (Inicio/Fin)")
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA CON GOOGLE SATÉLITE HÍBRIDO (CALLES Y COMERCIOS ACTIVOS)
+    # 3. SECCIÓN DE MÉTRICAS DINÁMICAS (KPIs)
+    st.subheader("📊 Indicadores Operacionales del Filtro")
+    m_col1, m_col2, m_col3 = st.columns(3)
+    with m_col1:
+        st.metric("Total Formularios Recolectados", len(df_f))
+    with m_col2:
+        st.metric("Encuestadores en Terreno", df_f['ENC_USER'].nunique())
+    with m_col3:
+        st.metric("Segmentos Cubiertos", df_f['SEG'].nunique())
+
+    st.markdown("---")
+
+    # 4. GENERACIÓN DEL MAPA SATELITAL PREMIUM DE GOOGLE
     if not df_f.empty:
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
-        # Crear mapa base de Folium centrado
         m = folium.Map(location=[lat_centro, lon_centro], zoom_start=16, control_scale=True)
 
-        # Capa Satélite Híbrida de Google (Aérea + Nombres de Calles y Comercios)
+        # Inyección directa del servidor satelital híbrido de Google (Fotos + Calles)
         folium.TileLayer(
             tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
             attr="Google Maps Satellite Hybrid",
@@ -95,58 +106,109 @@ try:
             control=False
         ).add_to(m)
 
-        # LÓGICA DE DIBUJO DE LÍNEAS (Solo si el usuario activa el checkbox de la pantalla)
+        # Lógica avanzada para trazar rutas y detectar extremos (Inicio/Fin)
         if mostrar_lineas:
-            # Agrupamos por Encuestador y Fecha para no mezclar trayectorias de personas distintas
             grupos = df_f.groupby(['ENC_USER', 'FECHAOC'])
-            
             for (usuario, fecha), grupo in grupos:
-                # Ordenamos cronológicamente usando el SbjNum como secuencia temporal
                 grupo_ordenado = grupo.sort_values(by='SbjNum')
-                
-                # Extraemos las coordenadas en orden para trazar la línea continua
                 coordenadas_ruta = grupo_ordenado[['LAT_INIOC', 'LON_INIOC']].values.tolist()
                 
                 if len(coordenadas_ruta) > 1:
-                    # Inyectamos la línea de trayectoria amarilla intensa en el mapa
                     folium.PolyLine(
                         locations=coordenadas_ruta,
                         color="#FFFF00",
                         weight=3,
-                        opacity=0.75,
-                        tooltip=f"Ruta: {usuario} ({fecha})"
+                        opacity=0.8,
+                        tooltip=f"Trayecto de: {usuario}"
                     ).add_to(m)
 
-        # Dibujar tus puntos amarillos intensos con Tooltips automáticos al pasar el mouse
+        # Dibujar marcadores con lógica de semáforo e índices correlativos
+        # Agrupamos temporalmente para calcular las paradas relativas
+        df_f = df_f.sort_values(by=['ENC_USER', 'FECHAOC', 'SbjNum'])
+        df_f['Parada_Num'] = df_f.groupby(['ENC_USER', 'FECHAOC']).cumcount() + 1
+
         for _, fila in df_f.iterrows():
-            # Texto grande para el Click
+            user_actual = fila['ENC_USER']
+            fecha_actual = fila['FECHAOC']
+            parada_idx = fila['Parada_Num']
+            
+            # Buscamos el total de paradas de este grupo para identificar el punto final
+            total_paradas_grupo = len(df_f[(df_f['ENC_USER'] == user_actual) & (df_f['FECHAOC'] == fecha_actual)])
+
+            # Por defecto el punto es amarillo intenso
+            color_punto = "#FFFF00"
+            leyenda_auditoria = f"Parada #{parada_idx}"
+
+            # Si el usuario activa las líneas, prendemos el semáforo de inicio y fin
+            if mostrar_lineas:
+                if parada_idx == 1:
+                    color_punto = "#00FF00" # Verde para el punto de inicio del día
+                    leyenda_auditoria = "🚩 PUNTO DE INICIO"
+                elif parada_idx == total_paradas_grupo and total_paradas_grupo > 1:
+                    color_punto = "#FF3333" # Rojo para el punto final del día
+                    leyenda_auditoria = "🏁 PUNTO FINAL"
+
             texto_popup = f"""
-            <b>Usuario:</b> {fila['ENC_USER']}<br>
-            <b>Fecha:</b> {fila['FECHAOC']}<br>
+            <b>🕵️ Estado:</b> {leyenda_auditoria}<br>
+            <b>Usuario:</b> {user_actual}<br>
+            <b>Fecha:</b> {fecha_actual}<br>
             <b>Segmento:</b> {fila['SEG']}<br>
-            <b>Sujeto:</b> {fila['SbjNum']}
+            <b>Sujeto (SbjNum):</b> {fila['SbjNum']}
             """
             
-            # Texto rápido para el Hover (Pasar el cursor encima) usando la variable SbjNum
-            texto_tooltip = f"Sujeto: {fila['SbjNum']}"
+            texto_tooltip = f"{leyenda_auditoria} | Sujeto: {fila['SbjNum']}"
             
             folium.CircleMarker(
                 location=[fila['LAT_INIOC'], fila['LON_INIOC']],
-                radius=5,
+                radius=8,
                 popup=folium.Popup(texto_popup, max_width=250),
-                tooltip=folium.Tooltip(texto_tooltip, permanent=False), # <-- HOVER AUTOMÁTICO REQUERIDO
-                color="#FFFF00",       # Amarillo intenso para el borde
+                tooltip=folium.Tooltip(texto_tooltip, permanent=False),
+                color=color_punto,
                 fill=True,
-                fill_color="#FFFF00",  # Amarillo intenso para el relleno
+                fill_color=color_punto,
                 fill_opacity=0.9
             ).add_to(m)
 
-        # Renderizar en Streamlit al ancho de la pantalla
+        # Renderizar mapa en la pantalla
         st_folium(m, width=1400, height=600, returned_objects=[])
 
-        # Tabla inferior de registros
-        st.subheader("📊 Registros en Pantalla")
-        st.dataframe(df_f, width='stretch')
+        # 5. TABLA DE REGISTROS Y BOTÓN DE DESCARGA
+        st.markdown("---")
+        col_sub, col_descarga = st.columns([3, 1])
+        with col_sub:
+            st.subheader("📋 Registros de Datos en Pantalla")
+        with col_descarga:
+            # Convertimos la tabla filtrada actual a CSV para Excel
+            csv_data = df_f.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Exportar Lista a Excel (CSV)",
+                data=csv_data,
+                file_name="reporte_coordenadas_filtrado.csv",
+                mime="text/csv",
+                width='stretch'
+            )
+        
+        st.dataframe(df_f.drop(columns=['Parada_Num']), width='stretch')
+
+        # 6. GRÁFICO ESTADÍSTICO DE PRODUCTIVIDAD (PLOTLY BARS)
+        st.markdown("---")
+        st.subheader("📊 Productividad General por Encuestador")
+        
+        # Conteo de formularios por usuario
+        df_conteo = df_f['ENC_USER'].value_counts().reset_index()
+        df_conteo.columns = ['Encuestador', 'Formularios Levantados']
+        
+        fig_barras = px.bar(
+            df_conteo, 
+            x='Encuestador', 
+            y='Formularios Levantados',
+            text='Formularios Levantados',
+            color='Encuestador',
+            color_discrete_sequence=px.colors.qualitative.Pastel
+        )
+        fig_barras.update_layout(margin={"r":0,"t":30,"l":0,"b":0}, height=350)
+        st.plotly_chart(fig_barras, width='stretch')
+
     else:
         st.warning("⚠️ No se encontraron coordenadas válidas para los filtros seleccionados.")
 
