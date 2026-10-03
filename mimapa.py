@@ -6,7 +6,7 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
 
-# Ajuste estricto de columnas superiores (Línea 11 fija con 2 columnas para el título y botón)
+# Ajuste estricto de columnas superiores
 col_titulo, col_boton = st.columns(2)
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
@@ -22,7 +22,7 @@ try:
     raw_key = st.secrets["GOOGLE_MAPS_API_KEY"]
     GOOGLE_MAPS_API_KEY = str(raw_key).replace('\n', '').replace('\r', '').strip().replace('"', '').replace("'", "")
 except Exception:
-    st.error("🚨 Error: No se encontró la clave 'GOOGLE_MAPS_API_KEY' en los Secrets de Streamlit.")
+    st.error("🚨 Error: No se encontró la clave 'GOOGLE_MAPS_API_KEY' in los Secrets de Streamlit.")
     GOOGLE_MAPS_API_KEY = ""
 
 # TU ENLACE REAL DE GOOGLE SHEETS
@@ -80,15 +80,15 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA CON URL REGLAMENTARIA DE GOOGLE (MÁXIMA NITIDEZ)
+    # 3. GENERACIÓN DEL MAPA EMBED OFICIAL REGLAMENTARIO DE GOOGLE MAPS (SIN ERROR 404)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
         # Calculamos la media de tus coordenadas para situar la cámara exactamente sobre tus rutas
         lat_centro = str(df_f['LAT_INIOC'].mean())
         lon_centro = str(df_f['LON_INIOC'].mean())
 
-        # URL MAESTRA OFICIAL: Apunta directo al endpoint de la API Maps Embed
+        # URL MAESTRA OFICIAL CORREGIDA: Usamos el endpoint 'place' con el parámetro 'q' que exige Google
         url_base = "https://googleapis.com"
-        parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&center=" + lat_centro + "," + lon_centro + "&zoom=17&maptype=satellite"
+        parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&q=" + lat_centro + "," + lon_centro + "&zoom=18&maptype=satellite"
         url_embed_final = url_base + parametros
 
         # Dibujar iframe comercial oficial de Google Maps autorizado sin bloqueos
