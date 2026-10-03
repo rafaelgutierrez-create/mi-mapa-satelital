@@ -80,14 +80,14 @@ try:
 
     st.markdown("---")
 
-    # 3. CONSTRUCCIÓN CON MODO VIEW OFICIAL DE GOOGLE (MÁXIMA NITIDEZ SATELITAL)
+    # 3. CONSTRUCCIÓN CON URL REGLAMENTARIA DE GOOGLE (MÁXIMA NITIDEZ SIN ERROR 404)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
         # Calculamos la media de tus coordenadas para situar la cámara exactamente sobre tus rutas
         lat_centro = str(df_f['LAT_INIOC'].mean())
         lon_centro = str(df_f['LON_INIOC'].mean())
 
-        # SINTAXIS REGLAMENTARIA DE GOOGLE: Modo /view con parámetro center y maptype=satellite
-        url_base = "https://googleapis.com"
+        # URL MAESTRA CORREGIDA: Cambiamos ://google.com por el endpoint oficial ://googleapis.com
+        url_base = "https://://googleapis.com/maps/embed/v1/view"
         parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&center=" + lat_centro + "," + lon_centro + "&zoom=17&maptype=satellite"
         url_embed_final = url_base + parametros
 
@@ -100,11 +100,3 @@ try:
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
-    else:
-        if GOOGLE_MAPS_API_KEY == "":
-            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
-        else:
-            st.warning("⚠️ No se encontraron coordenadas válidas para los filtros aplicados.")
-
-except Exception as e:
-    st.error(f"🚨 Error crítico en el procesamiento: {e}")
