@@ -2,14 +2,16 @@ import streamlit as st
 import pandas as pd
 import requests
 import io
+from streamlit_folium import st_folium
+import folium
 
 # 1. Configurar la página en modo ancho
-st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
+st.set_page_config(layout="wide", page_title="Monitoreo Satelital Ultra HD")
 
-# Ajuste de columnas superiores para el título y botón (Línea 11 fija)
-col_titulo, col_boton = st.columns(2)
+# Título y botón de actualización manual
+col_titulo, col_boton = st.columns([4, 1])
 with col_titulo:
-    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
+    st.title("🛰️ Monitoreo Satelital de Alta Definición (Google Maps)")
 with col_boton:
     st.write("")
     st.write("")
@@ -17,25 +19,17 @@ with col_boton:
         st.cache_data.clear()
         st.rerun()
 
-# Extracción y limpieza matemática total del token privado de los secretos
-try:
-    raw_key = st.secrets["GOOGLE_MAPS_API_KEY"]
-    GOOGLE_MAPS_API_KEY = str(raw_key).replace('\n', '').replace('\r', '').strip().replace('"', '').replace("'", "")
-except Exception:
-    st.error("🚨 Error: No se encontró la clave 'GOOGLE_MAPS_API_KEY' en los Secrets de Streamlit.")
-    GOOGLE_MAPS_API_KEY = ""
-
 # TU ENLACE REAL DE GOOGLE SHEETS
 URL_DE_TU_SHEET = "https://google.com"
 
 @st.cache_data(ttl=2)
 def cargar_datos():
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    headers = {'User-Agent': 'Mozilla/5.0'}
     response = requests.get(URL_DE_TU_SHEET, headers=headers, timeout=15)
     response.raise_for_status()
     df = pd.read_csv(io.StringIO(response.text))
     
-    # Limpieza de coordenadas convirtiendo comas en puntos decimales
+    # Limpieza de coordenadas
     df['LAT_INIOC'] = pd.to_numeric(df['LAT_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     df['LON_INIOC'] = pd.to_numeric(df['LON_INIOC'].astype(str).str.replace(',', '.'), errors='coerce')
     
@@ -80,32 +74,50 @@ try:
 
     st.markdown("---")
 
-    # 3. GENERACIÓN DEL MAPA CON SINTAXIS BLINDADA DE RED
-    if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
-        lat_txt = str(df_f['LAT_INIOC'].mean())
-        lon_txt = str(df_f['LON_INIOC'].mean())
+    # 3. GENERACIÓN DEL MAPA CON GOOGLE SATÉLITE HYBRID (ZOOM ILIMITADO)
+    if not df_f.empty:
+        lat_centro = df_f['LAT_INIOC'].mean()
+        lon_centro = df_f['LON_INIOC'].mean()
 
-        # Aislando los caracteres de consulta para evitar corrupciones de texto (google.com14.62)
-        base_url = "https://google.com"
-        query_trigger = "?q="
-        
-        # Ensamblado lineal directo y limpio de la URL de Google Maps Embed
-        url_embed_final = f"{base_url}{query_trigger}{lat_txt},{lon_txt}&z=18&t=k&output=embed&key={GOOGLE_MAPS_API_KEY}"
+        # Crear mapa base de Folium centrado
+        m = folium.Map(location=[lat_centro, lon_centro], zoom_start=16, control_scale=True)
 
-        # Dibujar el componente iframe de Google Maps nativo
-        st.markdown(
-            f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
-            unsafe_allow_html=True
-        )
+        # AGREGAMOS EL SATÉLITE REAL DE GOOGLE CON ZOOM MÁXIMO DE 20
+        folium.TileLayer(
+            tiles="http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
+            attr="Google Maps Satellite",
+            name="Google Satélite",
+            max_zoom=20, # <--- ESTO DESBLOQUEA EL ZOOM ULTRA DE ACERCAMIENTO MÁXIMO
+            overlay=False,
+            control=False
+        ).add_to(m)
+
+        # Dibujar tus puntos celestes con ventanas flotantes de información
+        for _, fila in df_f.iterrows():
+            texto_popup = f"""
+            <b>Usuario:</b> {fila['ENC_USER']}<br>
+            <b>Fecha:</b> {fila['FECHAOC']}<br>
+            <b>Segmento:</b> {fila['SEG']}<br>
+            <b>Sujeto:</b> {fila['SbjNum']}
+            """
+            folium.CircleMarker(
+                location=[fila['LAT_INIOC'], fila['LON_INIOC']],
+                radius=7,
+                popup=folium.Popup(texto_popup, max_width=250),
+                color="#00FFFF",
+                fill=True,
+                fill_color="#00FFFF",
+                fill_opacity=0.8
+            ).add_to(m)
+
+        # Renderizar en Streamlit al ancho de la pantalla
+        st_folium(m, width=1400, height=600, returned_objects=[])
 
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
     else:
-        if GOOGLE_MAPS_API_KEY == "":
-            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
-        else:
-            st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
+        st.warning("⚠️ No se encontraron coordenadas válidas para los filtros seleccionados.")
 
 except Exception as e:
     st.error(f"🚨 Error crítico en el procesamiento: {e}")
