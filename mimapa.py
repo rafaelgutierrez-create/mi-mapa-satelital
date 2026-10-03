@@ -80,19 +80,19 @@ try:
 
     st.markdown("---")
 
-    # 3. CONSTRUCCIÓN CON ENLACE DE API AUTORIZADO (SOLUCIÓN AL RECHAZO DE CONEXIÓN)
+    # 3. CONSTRUCCIÓN CON MODO DE BÚSQUEDA AUTORIZADO (SOLUCIÓN FINAL DE LIENZO GRIS)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
         # Tomamos la primera coordenada actual para la chincheta
         coordenada_ancla = df_f.iloc[0]
         lat_ancla = str(coordenada_ancla['LAT_INIOC'])
         lon_ancla = str(coordenada_ancla['LON_INIOC'])
 
-        # CORRECCIÓN MAESTRA: Usamos ://googleapis.com en lugar de ://google.com
-        url_base = "https://://googleapis.com/maps/embed/v1/place"
+        # CORRECCIÓN DE MODO: Cambiamos /place por /search para que Google acepte números de coordenadas puras
+        url_base = "https://googleapis.com"
         parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&q=" + lat_ancla + "," + lon_ancla + "&zoom=18&maptype=satellite"
         url_embed_final = url_base + parametros
 
-        # Dibujar iframe comercial autorizado de Google Maps sin bloqueos de Frame
+        # Dibujar iframe comercial oficial de Google Maps
         st.markdown(
             f'<iframe width="100%" height="600" style="border:0; border-radius:8px;" allowfullscreen src="{url_embed_final}"></iframe>', 
             unsafe_allow_html=True
@@ -101,6 +101,7 @@ try:
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
+
     else:
         if GOOGLE_MAPS_API_KEY == "":
             st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
