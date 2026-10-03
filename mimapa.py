@@ -6,7 +6,7 @@ import io
 # 1. Configurar la página en modo ancho
 st.set_page_config(layout="wide", page_title="Monitoreo Satelital Real HD")
 
-# Ajuste estricto de columnas superiores (Línea 11 fija con 2 columnas)
+# Ajuste estricto de columnas superiores (Línea 11 fija con 2 columnas para el título y botón)
 col_titulo, col_boton = st.columns(2)
 with col_titulo:
     st.title("🛰️ Monitoreo Satelital de Alta Definición (Google API)")
@@ -17,7 +17,7 @@ with col_boton:
         st.cache_data.clear()
         st.rerun()
 
-# Extracción y limpieza matemática total del token
+# Extracción y limpieza matemática total del token privado de los secretos
 try:
     raw_key = st.secrets["GOOGLE_MAPS_API_KEY"]
     GOOGLE_MAPS_API_KEY = str(raw_key).replace('\n', '').replace('\r', '').strip().replace('"', '').replace("'", "")
@@ -80,14 +80,14 @@ try:
 
     st.markdown("---")
 
-    # 3. CONSTRUCCIÓN CON URL REGLAMENTARIA DE GOOGLE (MÁXIMA NITIDEZ SIN ERROR 404)
+    # 3. GENERACIÓN DEL MAPA CON URL REGLAMENTARIA DE GOOGLE (MÁXIMA NITIDEZ)
     if not df_f.empty and GOOGLE_MAPS_API_KEY != "":
         # Calculamos la media de tus coordenadas para situar la cámara exactamente sobre tus rutas
         lat_centro = str(df_f['LAT_INIOC'].mean())
         lon_centro = str(df_f['LON_INIOC'].mean())
 
-        # URL MAESTRA CORREGIDA: Cambiamos ://google.com por el endpoint oficial ://googleapis.com
-        url_base = "https://://googleapis.com/maps/embed/v1/view"
+        # URL MAESTRA OFICIAL: Apunta directo al endpoint de la API Maps Embed
+        url_base = "https://googleapis.com"
         parametros = "?key=" + GOOGLE_MAPS_API_KEY + "&center=" + lat_centro + "," + lon_centro + "&zoom=17&maptype=satellite"
         url_embed_final = url_base + parametros
 
@@ -100,3 +100,11 @@ try:
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
         st.dataframe(df_f, width='stretch')
+    else:
+        if GOOGLE_MAPS_API_KEY == "":
+            st.warning("⚠️ Esperando la configuración de la clave GOOGLE_MAPS_API_KEY de forma lineal dentro de los secretos.")
+        else:
+            st.warning("⚠️ No se encontraron coordenadas válidas para la combinación de filtros seleccionada.")
+
+except Exception as e:
+    st.error(f"🚨 Error crítico en el procesamiento: {e}")
