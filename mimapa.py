@@ -104,9 +104,9 @@ try:
                 location=[fila['LAT_INIOC'], fila['LON_INIOC']],
                 radius=7,
                 popup=folium.Popup(texto_popup, max_width=250),
-                color="#00FFFF",
+                color="#FFFF00 ",
                 fill=True,
-                fill_color="#00FFFF",
+                fill_color="#FFFF00 ",
                 fill_opacity=0.8
             ).add_to(m)
 
