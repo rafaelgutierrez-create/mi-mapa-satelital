@@ -83,7 +83,7 @@ try:
 
         # CAMBIO CRÍTICO: Usamos 'lyrs=y' para activar las capas de texto, calles y negocios sobre las fotos
         folium.TileLayer(
-            tiles="mt1.google.com/vt/lyrs=h@119&hl=en&src=api&x={x}&y={y}&z={z}&s=Gali",
+            tiles="https://mt1.google.com/vt/lyrs=p&x={col}&y={row}&z={level}",
             attr="Google Maps Satellite Hybrid",
             name="Google Satélite Híbrido",
             max_zoom=20, 
