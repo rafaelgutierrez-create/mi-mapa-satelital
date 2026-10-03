@@ -74,45 +74,42 @@ try:
 
     st.markdown("---")
 
-     # 3. GENERACIÓN DEL MAPA CON GOOGLE SATÉLITE HYBRID (ZOOM ILIMITADO)
+        # 3. GENERACIÓN DEL MAPA CON PLOTLY GRAPH OBJECTS (HOVER AUTOMÁTICO + GOOGLE TILES)
     if not df_f.empty:
+        import plotly.graph_objects as go
+
         lat_centro = df_f['LAT_INIOC'].mean()
         lon_centro = df_f['LON_INIOC'].mean()
 
-        # Crear mapa base de Folium centrado
-        m = folium.Map(location=[lat_centro, lon_centro], zoom_start=16, control_scale=True)
+        # Construimos el mapa con etiquetas flotantes instantáneas al pasar el cursor
+        fig = go.Figure(go.Scattermap(
+            lat=df_f["LAT_INIOC"],
+            lon=df_f["LON_INIOC"],
+            mode='markers',
+            # Marcadores de color amarillo intenso de alta visibilidad
+            marker=go.scattermap.Marker(size=14, color='#FFFF00', opacity=0.9),
+            # Texto personalizado idéntico al de tu imagen
+            text="Usuario: " + df_f["ENC_USER"].astype(str) + "<br>Sujeto: " + df_f["SbjNum"].astype(str),
+            hoverinfo='text'
+        ))
 
-        # AGREGAMOS EL SATÉLITE REAL DE GOOGLE CON ZOOM MÁXIMO DE 20
-        folium.TileLayer(
-            tiles="http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
-            attr="Google Maps Satellite",
-            name="Google Satélite",
-            max_zoom=20,
-            overlay=False,
-            control=False
-        ).add_to(m)
+        # Inyectamos tu enlace de Google Satélite de forma nativa para que no se borre al hacer zoom
+        fig.update_layout(
+            map={
+                "style": "white-bg", # Quitamos el mapa vectorial base
+                "center": {"lat": lat_centro, "lon": lon_centro},
+                "zoom": 16,
+                "layers": [{
+                    "sourcetype": "raster",
+                    "source": ["https://google.com{x}&y={y}&z={z}"],
+                    "below": "traces" # Obliga a los puntos amarillos a quedar arriba del satélite
+                }]
+            },
+            margin={"r":0,"t":0,"l":0,"b":0}
+        )
 
-        # Dibujar tus puntos amarillos con ventanas flotantes de información
-        for _, fila in df_f.iterrows():
-            texto_popup = f"""
-            <b>Usuario:</b> {fila['ENC_USER']}<br>
-            <b>Fecha:</b> {fila['FECHAOC']}<br>
-            <b>Segmento:</b> {fila['SEG']}<br>
-            <b>Sujeto:</b> {fila['SbjNum']}
-            """
-            folium.CircleMarker(
-                location=[fila['LAT_INIOC'], fila['LON_INIOC']],
-                radius=7,
-                popup=folium.Popup(texto_popup, max_width=250),
-                color="#FFFF00",       # CAMBIADO: Borde amarillo intenso
-                fill=True,
-                fill_color="#FFFF00",  # CAMBIADO: Relleno amarillo intenso
-                fill_opacity=0.9       # Subido ligeramente a 0.9 para que brille más
-            ).add_to(m)
-
-        # Renderizar en Streamlit al ancho de la pantalla
-        st_folium(m, width=1400, height=600, returned_objects=[])
-
+        # Renderizado moderno adaptado a Streamlit
+        st.plotly_chart(fig, width='stretch')
 
         # Tabla inferior de registros
         st.subheader("📊 Registros en Pantalla")
